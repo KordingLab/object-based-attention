@@ -1,0 +1,14 @@
+*.p
+coco_metadata/*
+deprecated/*
+cocoapi/*
+runs/*
+images/*
+.ipynb_checkpoints/*
+__pycache__/*
+dual_loss_log/*
+images_alt/*
+runs_old/*
+adversarial_images/*
+*.csv
+*.DS_Store
