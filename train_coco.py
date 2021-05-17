@@ -4,9 +4,9 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device', type= int, default = 3)
-parser.add_argument('--traindir', type= str, default = '../../../data/jordanlei/coco/images/train2017')
-parser.add_argument('--anndir', type= str, default = '../../../data/jordanlei/coco/annotations/instances_train2017.json')
-parser.add_argument('--metadatadir', type= str, default = 'data/metadata/cocometadata_train.p')
+parser.add_argument('--trainpath', type= str, default = '../../../data/jordanlei/coco/images/train2017')
+parser.add_argument('--annpath', type= str, default = '../../../data/jordanlei/coco/annotations/instances_train2017.json')
+parser.add_argument('--metadatapath', type= str, default = 'data/metadata/cocometadata_train.p')
 parser.add_argument('--strength', type= float, default = 0.9)
 parser.add_argument('--out', type = str, default='attn')
 parser.add_argument('--name', type = str, default='coco_model')
@@ -16,9 +16,9 @@ run_id = args.name
 device =  torch.device("cuda:%s"%(args.device) if torch.cuda.is_available() else "cpu")
 
 strength = args.strength
-root = args.traindir
-annfile = args.anndir
-metadatafile = args.metadatadir
+root = args.trainpath
+annfile = args.annpath
+metadatafile = args.metadatapath
 modelname = args.name
 
 coco_dataset, metadata = get_data(root, annfile, metadatafile, size = (100, 100), strength = strength, use_supercategory = True)
@@ -43,6 +43,12 @@ def get_class_weights(superclass = False):
             
     return [label_weights[i] for i in range(max(label_weights.keys()) + 1)]
 
+#establish weights on supercategory classes
+category_count, supercategory_count = get_category_counts(train.indices, metadata["images"], metadata["annotations"])
+supercat_weights = class_weight(supercategory_count)
+helper_dicts = get_dicts()
+sweights = {helper_dicts["supercat_to_sl"][k]: supercat_weights[k] for k in supercat_weights.keys()}
+sweights = [sweights[i] for i in range(len(sweights))]
 
 dflist = []
 net = Net(strength = strength).to(device)
