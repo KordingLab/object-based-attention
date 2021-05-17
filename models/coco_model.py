@@ -174,9 +174,9 @@ class Runner():
     
     def plot(self, maskarray, rows = 2, cols = 2, x = None, save = False, train = True): 
         if train: 
-            folder = "saved/plots"
+            folder = "saved/plots/train"
         else:
-            folder = "saved/plots"
+            folder = "saved/plots/val"
         for n, masked in enumerate(maskarray): 
             plt.figure()
             fig, ax = plt.subplots(rows, cols, figsize = (cols * 5, rows*3))
