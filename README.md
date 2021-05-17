@@ -1,2 +1,1 @@
-# object-based-attention
-Object Based Attention Through Internal Gating
+# Object Based Attention Through Internal Gating
