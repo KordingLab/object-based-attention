@@ -22,7 +22,7 @@ metadatafile = args.metadatapath
 coco_dataset, metadata = get_data(root, annfile, metadatafile, size = (100, 100), strength = strength, use_supercategory = True)
 test_loader = DataLoader(coco_dataset, batch_size = 32, shuffle = True, num_workers=4)
 
-net = Net((28, 28+14), strength = args.strength).to(device)
+net = Net(strength = args.strength).to(device)
 net.load_state_dict(torch.load(args.modelpath))
 net.eval()
 
