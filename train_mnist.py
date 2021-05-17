@@ -51,7 +51,7 @@ for lr in [1e-3]:
             optimizer = torch.optim.Adam(net.parameters(), lr = lr)
             criterion = nn.CrossEntropyLoss()
             runner = Runner(net, optimizer, criterion, penalty = p, n = args.n, device = device, name = modelname)
-            runner.train(train_loader, val_loader, epochs = 10)
+            runner.train(train_loader, val_loader, epochs = 1)
 
             metric = runner.get_metrics()
             metric["final_acc"] = runner.test(val_loader, save = True)

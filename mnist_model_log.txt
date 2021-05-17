@@ -1,0 +1,7 @@
+
+MNIST ATTENTION MODEL
+#DIGITS: 2 STRENGTH: 0.2 NOISE: 0.3
+Runing Attention Model...
+[MODELNAME mnist_model_penalty_1000.0_lr_0.001 TRIAL 0]
+	[SAVE] New Best Model For 1000.0 With Score 0.9349444444444445 -- Saved
+[DONE]

@@ -1,4 +1,5 @@
 *.p
+mnist/*
 coco_metadata/*
 deprecated/*
 cocoapi/*
