@@ -15,7 +15,7 @@ from typing import Any, Callable, Optional, Tuple, List
 
 coco = None
 
-def get_filtered_metadata(savefile = "metadata"):
+def get_filtered_metadata_deprecated(savefile = "metadata.p"):
     #get all image IDs
     img_ids = coco.getImgIds()
 
@@ -52,10 +52,10 @@ def get_filtered_metadata(savefile = "metadata"):
             filtered_images.append(final_anns[0]["image_id"])
     
     metadata = {"images": filtered_images, "annotations": filtered_annotations}
-    pickle.dump(metadata, open("coco_metadata/%s.p"%(savefile), "wb"))
+    pickle.dump(metadata, open("%s"%(savefile), "wb"))
     return filtered_images, filtered_annotations
 
-def get_filtered_metadata_2objects(savefile = "metadata_2objects"):
+def get_filtered_metadata(savefile = "metadata.p"):
     #get all image IDs
     img_ids = coco.getImgIds()
 
@@ -94,10 +94,8 @@ def get_filtered_metadata_2objects(savefile = "metadata_2objects"):
                 filtered_images.append(final_anns[0]["image_id"])
     
     metadata = {"images": filtered_images, "annotations": filtered_annotations}
-    pickle.dump(metadata, open("coco_metadata/%s.p"%(savefile), "wb"))
+    pickle.dump(metadata, open("%s"%(savefile), "wb"))
     return filtered_images, filtered_annotations
-
-
 
 def center_pad(img, fill = 0):
     '''
@@ -394,6 +392,12 @@ def get_data(root, annfile,
     global coco
     
     coco = COCO(annfile)
+
+    if not os.path.exists(metadatafile):
+        print(metadatafile, " not found. Generating Metadata File Now.")
+        print("Please be patient, this may take a few minutes.")
+        get_filtered_metadata(metadatafile)
+
     metadata = pickle.load(open(metadatafile, "rb"))
     filtered_ids = metadata["images"]
     filtered_annotations = metadata["annotations"]
