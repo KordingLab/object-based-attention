@@ -35,7 +35,7 @@ def get_filtered_metadata_deprecated(savefile = "metadata.p"):
         filtered_anns = sorted(filtered_anns, key = lambda x: -x["area"])
 
         if i % 500 == 0: 
-            print("[%s\% Complete]\t ITEMS FOUND:%s"%(int((i/len(list_of_anns))*100), len(filtered_images)))
+            print("[%s%% Complete]\t ITEMS FOUND:%s"%(int((i/len(list_of_anns))*100), len(filtered_images)))
         
         if len(filtered_anns) > 0: 
             final_anns = []
@@ -75,7 +75,7 @@ def get_filtered_metadata(savefile = "metadata.p"):
         filtered_anns = sorted(filtered_anns, key = lambda x: -x["area"])
 
         if i % 500 == 0: 
-            print("[%s\% Complete]\t ITEMS FOUND:%s"%(int((i/len(list_of_anns))*100), len(filtered_images)))
+            print("[%s%% Complete]\t ITEMS FOUND:%s"%(int((i/len(list_of_anns))*100), len(filtered_images)))
         
         if len(filtered_anns) >= 2: 
             final_anns = []
