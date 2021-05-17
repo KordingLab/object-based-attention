@@ -28,7 +28,7 @@ net.eval()
 
 optimizer = torch.optim.Adam(net.parameters(), lr = 0.0001)
 criterion = nn.CrossEntropyLoss()
-runner = Runner(net, optimizer, criterion, penalty = 5000, n=args.n, device = device)
+runner = Runner(net, optimizer, criterion, penalty = 5000, n=2, device = device)
 
 accuracy = runner.test(test_loader)
 print("Test Accuracy:", accuracy)

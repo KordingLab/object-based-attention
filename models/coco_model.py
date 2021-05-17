@@ -130,11 +130,9 @@ class Net(nn.Module):
                                                                      self.upsample1_t(self.latent["maxpool1_out"])], 1), 
                                                output_size = self.latent["in"].shape))
         
-        self.hidden["conv1_in"] = torch.stack([conv1_in_hidden] * self.channels[0], 1)
-
+        self.hidden["conv1_in"] = torch.cat([conv1_in_hidden] * self.channels[0], 1)
+        
         if out_mask is not None: 
-            #color invariant masking
-#             self.hidden["conv1_in"] = torch.stack([torch.min(self.hidden["conv1_in"], 1).values] * self.hidden["conv1_in"].shape[1], 1)
 
             #zero out conv1-in by mask
             newconv1in = (1 - out_mask["conv1_in"]) * self.hidden["conv1_in"]
