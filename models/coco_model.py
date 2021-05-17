@@ -1,6 +1,7 @@
 import torchvision
 import torch
 import numpy as np
+import sklearn
 import pandas as pd
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -9,6 +10,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import pandas as pd
 from collections import defaultdict
+from sklearn.metrics import confusion_matrix, f1_score
 
 
 class Net(nn.Module):
