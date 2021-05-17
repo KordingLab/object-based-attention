@@ -15,7 +15,7 @@ args = parser.parse_args()
 device =  torch.device("cuda:%s"%(args.device) if torch.cuda.is_available() else "cpu")
 
 _, _, test_loader = get_data(n = args.n, strength = args.strength, noise = args.noise, resample = True)
-net = Net((28, 28+14), strength = strength).to(device)
+net = Net((28, 28+14), strength = args.strength).to(device)
 net.load_state_dict(torch.load(args.modelpath))
 net.eval()
 
