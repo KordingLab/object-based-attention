@@ -1,8 +1,8 @@
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
-from data.mnist_loader import get_data
-from models.mnist_model import *
+from .data.mnist_loader import get_data
+from .models.mnist_model import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device', type= int, default = 3)
