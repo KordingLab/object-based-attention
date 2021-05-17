@@ -10,6 +10,7 @@ parser.add_argument('--metadatapath', type= str, default = 'data/metadata/cocome
 parser.add_argument('--strength', type= float, default = 0.9)
 parser.add_argument('--out', type = str, default='attn')
 parser.add_argument('--name', type = str, default='coco_model')
+parser.add_argument('--epochs', type = int, default=100)
 
 args = parser.parse_args()
 run_id = args.name
@@ -58,7 +59,7 @@ class_weights = torch.Tensor(sweights).to(device)
 criterion = nn.CrossEntropyLoss(weight = class_weights)
 
 runner = Runner(net, optimizer, criterion, penalty = 5000, n=2, device = device, name = modelname)
-runner.train(train_loader, val_loader, epochs = 1)
+runner.train(train_loader, val_loader, epochs = args.epochs)
 metric = runner.get_metrics()
 metric["final_acc"] = runner.test(val_loader, save = True)
 

@@ -126,9 +126,12 @@ class Net(nn.Module):
                                                                      self.upsample2_t(self.latent["maxpool2_out"])], 1), 
                                                output_size = self.latent["maxpool1_out"].shape))
         
-        self.hidden["conv1_in"] = torch.tanh(self.conv1_t(torch.cat([self.upsample1_t(self.hidden["conv2_in"]), 
+        conv1_in_hidden = torch.tanh(self.conv1_t(torch.cat([self.upsample1_t(self.hidden["conv2_in"]), 
                                                                      self.upsample1_t(self.latent["maxpool1_out"])], 1), 
                                                output_size = self.latent["in"].shape))
+        
+        self.hidden["conv1_in"] = torch.stack([conv1_in_hidden] * self.channels[0], 1)
+
         if out_mask is not None: 
             #color invariant masking
 #             self.hidden["conv1_in"] = torch.stack([torch.min(self.hidden["conv1_in"], 1).values] * self.hidden["conv1_in"].shape[1], 1)
@@ -154,8 +157,7 @@ class Net(nn.Module):
     
     def initHidden(self, device, batch_size=64): 
         self.latent = {}
-        self.hidden["conv1_in"] = torch.zeros((batch_size, 3, self.in_size[0], self.in_size[1])).to(device)
-        self.hidden["conv1_in_dsp"] = torch.zeros((batch_size, 3, self.in_size[0], self.in_size[1])).to(device)
+        self.hidden["conv1_in"] = torch.zeros(batch_size, self.channels[0], self.in_size[0], self.in_size[1]).to(device)
         self.hidden["conv2_in"] = torch.zeros(batch_size, self.channels[1], self.h1_2, self.w1_2).to(device)
         self.hidden["conv3_in"] = torch.zeros(batch_size, self.channels[2], self.h2_2, self.w2_2).to(device)
         self.hidden["conv4_in"] = torch.zeros(batch_size, self.channels[3], self.h3_2, self.w3_2).to(device)
