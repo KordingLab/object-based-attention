@@ -12,14 +12,12 @@ parser.add_argument('--out', type = str, default='attn')
 parser.add_argument('--modelpath', type = str, default='saved/models/coco_model.pt')
 
 args = parser.parse_args()
-run_id = args.name
 device =  torch.device("cuda:%s"%(args.device) if torch.cuda.is_available() else "cpu")
 
 strength = args.strength
 root = args.trainpath
 annfile = args.annpath
 metadatafile = args.metadatapath
-modelname = args.name
 
 coco_dataset, metadata = get_data(root, annfile, metadatafile, size = (100, 100), strength = strength, use_supercategory = True)
 test_loader = DataLoader(coco_dataset, batch_size = 32, shuffle = True, num_workers=4)
