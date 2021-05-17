@@ -63,7 +63,7 @@ class Net(nn.Module):
         self.upsample2_t = nn.Upsample(size = (self.h2_1, self.w2_1), mode = 'bicubic', align_corners=False)
         self.conv2_t = nn.ConvTranspose2d(channels[2] * 2, channels[1], 4, stride = 1)
         self.upsample1_t = nn.Upsample(size = (self.h1_1, self.w1_1), mode = 'bicubic', align_corners=False)
-        self.conv1_t = nn.ConvTranspose2d(channels[1] * 2, channels[0], 4,  stride = 1)
+        self.conv1_t = nn.ConvTranspose2d(channels[1] * 2, 1, 4,  stride = 1)
         
         
         self.coutsize = self.h4_2 * self.w4_2 * channels[4]
