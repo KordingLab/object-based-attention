@@ -1,21 +1,32 @@
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
-from .data.mnist_loader import get_data
-from .models.mnist_model import *
+import argparse
+import os
+import sys
+import inspect
+from scipy import stats
+
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir) 
+
+from data.mnist_loader import get_data
+from models.mnist_model import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--device', type= int, default = 3)
+parser.add_argument('--device', type= int, default = 2)
 parser.add_argument('--n', type= int, default = 2)
 parser.add_argument('--strength', type= float, default = 0.2)
 parser.add_argument('--noise', type= float, default = 0.3)
 parser.add_argument('--resample', type = bool, default = True)
 parser.add_argument('--out', type = str, default='attn')
-parser.add_argument('--modelpath', type = str, default='../saved/models/mnist_model.pt')
+parser.add_argument('--modelpath', type = str, default='../saved/models/paper_mnist_model.pt')
 
 
 args = parser.parse_args()
 device =  torch.device("cuda:%s"%(args.device) if torch.cuda.is_available() else "cpu")
+strength = args.strength
 
 def toshow(x): 
     plt.figure()
@@ -48,61 +59,75 @@ def generate_bars(degrange, sigrange, xrange, yrange):
     
     return batches
 
-def calculate_activations(net, batches, im, conv_layers = ["conv_1", "conv_2"]): 
-    attended_activations = defaultdict(lambda: [])
-    not_attended_activations = defaultdict(lambda: [])
-    noise = 0.0
-    
-    for batch in batches:
-        digit = torch.stack([im]*batch.shape[0])
-        x = batch + digit
-        noise_matrix = torch.FloatTensor(np.random.random(x.shape) * noise)
-        n_mask = x <= 0.1
-        noise_matrix = noise_matrix * n_mask
-        x = x + noise_matrix
+def calculate_activations(net, batches, im, conv_layers = ["conv1_out", "conv2_out"]):
+    with torch.no_grad():
+        attended_activations = defaultdict(lambda: [])
+        not_attended_activations = defaultdict(lambda: [])
 
-        bar = x * (1-strength) + strength * batch
-        digit = x * (1-strength) + strength * digit
+        noise = 0.0
 
-        x = x.to(device)
-        bar = bar.to(device)
-        digit = digit.to(device)
-
-        net.initHidden(device, x.shape[0])
-        out_mask = {}
-        out_mask["out"] = torch.zeros(labels[0].shape[0], 10).to(self.device)
-        out_mask["conv1_in"] = torch.zeros_like(self.net.hidden["conv1_in"])
-        out_mask["conv2_in"] = torch.zeros_like(self.net.hidden["conv2_in"])
-
-        findselectmask = torch.zeros((x.shape[0], 2)).type(torch.bool)
-
-        for _ in range(2):
-            net.initHidden(device, x.shape[0])
-            for _ in range(5): 
-                out = net(x)
+        for batch in batches:
+            attended = defaultdict(lambda: [])
+            not_attended = defaultdict(lambda: [])
             
-            data = [bar, digit]
-            masked = net.latent["in"]
-            findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
-            findselect = torch.stack(findselect).T
-            findselect[findselectmask] = 1e10
+            digit = torch.stack([im]*batch.shape[0])
+            x = batch + digit
+            noise_matrix = torch.FloatTensor(np.random.random(x.shape) * noise)
+            n_mask = x <= 0.1
+            noise_matrix = noise_matrix * n_mask
+            x = x + noise_matrix
 
-            select = torch.argmin(findselect, axis = 1).detach().cpu()
-            findselectmask[np.arange(len(findselectmask)), select] = True
+            bar = x * (1-strength) + strength * batch
+            digit = x * (1-strength) + strength * digit
 
-            attended_index = select == 0
-            not_attended_index = select == 1
+            x = x.to(device)
+            bar = bar.to(device)
+            digit = digit.to(device)
+
+            net.initHidden(device, x.shape[0])
+            out_mask = {}
+            out_mask["conv1_in"] = torch.zeros_like(net.hidden["conv1_in"])
+            out_mask["conv2_in"] = torch.zeros_like(net.hidden["conv2_in"])
+
+            findselectmask = torch.zeros((x.shape[0], 2)).type(torch.bool)
+
+            for _ in range(2):
+                net.initHidden(device, x.shape[0])
+                for _ in range(5): 
+                    out = net(x, out_mask = out_mask)
+
+                data = [bar, digit]
+                masked = net.latent["in"]
+                findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
+                findselect = torch.stack(findselect).T
+                findselect[findselectmask] = 1e10
+
+                select = torch.argmin(findselect, axis = 1).detach().cpu()
+                findselectmask[np.arange(len(findselectmask)), select] = True
+
+                attended_index = select == 0
+                not_attended_index = select == 1
+
+                for layer in conv_layers: 
+                    conv_out = net.latent[layer].detach()
+                    attended[layer].append(conv_out[attended_index])
+                    not_attended[layer].append(conv_out[not_attended_index])
+
+                out_mask["conv1_in"] = (out_mask["conv1_in"] + (net.hidden["conv1_in"] < 0.5) > 0.5).type(torch.int)
+                out_mask["conv2_in"] = (out_mask["conv2_in"] + (net.hidden["conv2_in"] < 0.5) > 0.5).type(torch.int)
 
             for layer in conv_layers: 
-                conv_out = net.latent[layer].detach()
-                attended[layer].append(conv_out[attended_index])
-                not_attended[layer].append(conv_out[not_attended_index])
-            
-            out_mask = {}
-            out_mask["conv1_in"] = (out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5) > 0.5).type(torch.int)
-            out_mask["conv2_in"] = (out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5) > 0.5).type(torch.int)
-    
-    return attended_activations, not_attended_activations
+                att = torch.cat(attended[layer], 0)
+                not_att = torch.cat(not_attended[layer], 0)
+
+                max_att = torch.max(att, 0).values.detach().cpu().numpy()
+                max_not_att = torch.max(not_att, 0).values.detach().cpu().numpy()
+
+                attended_activations[layer].append(max_att)
+                not_attended_activations[layer].append(max_not_att)
+
+
+        return attended_activations, not_attended_activations
 
 
 def plot_curves(attended_activations, not_attended_activations, degrange):
@@ -110,17 +135,17 @@ def plot_curves(attended_activations, not_attended_activations, degrange):
         act = np.stack(attended_activations[layer], 3)
         nonact = np.stack(not_attended_activations[layer], 3)
         
-        if layer == "conv1_in":
+        if layer == "conv1_out":
             r = 12
             c = 8
-        elif layer == "conv2_in":
+        elif layer == "conv2_out":
             r = 4
             c = 3
 
         for i in range(act.shape[0]): 
             fig = plt.figure()
-            plt.plot(degrange, act[i][r][c], color = (0, 1, 0, 1))
-            plt.plot(degrange, nonact[i][r][c], color = (0, 0, 1, 1))
+            plt.plot(degrange, act[i][r][c], color = (14/255, 77/255, 179/255, 1))
+            plt.plot(degrange, nonact[i][r][c], color = (212/255, 78/255, 78/255, 1))
             plt.xlabel("Degrees")
             plt.ylabel("Activation")
 
@@ -136,39 +161,39 @@ def plot_curves(attended_activations, not_attended_activations, degrange):
 
          
 
+print("Tuning Curves Analysis")
 
-def __main__(): 
-    print("Tuning Curves Analysis")
+print("[Step 1]\tLoading Model...")
+dataset = torchvision.datasets.MNIST("../mnist", download = True,\
+        transform = torchvision.transforms.ToTensor())
 
-    print("[Step 1]\tLoading Model...")
-    dataset = torchvision.datasets.MNIST("mnist", download = True,\
-            transform = torchvision.transforms.ToTensor())
-    
-    net = Net((28, 28+14), strength = args.strength).to(device)
-    net.load_state_dict(torch.load(args.modelpath))
-    net.eval()
-    
-    print("[Step 2]\tGenerating Rotating Bars...")
-    #create a "distractor digit"
-    x, y = dataset[6]
-    x = x.numpy().reshape(28, 28)
-    im = np.zeros((28, 28+14))
-    im[:, 14: x.shape[1]+14] = x
+print(args.modelpath)
+net = Net((28, 28+14), strength = args.strength).to(device)
+net.load_state_dict(torch.load(args.modelpath))
+net.eval()
 
-    degrange = np.linspace(0, 180, 21)
-    sigrange = np.linspace(0.5, 2, 10)
-    xrange = np.linspace(-15, -10, 11)
-    yrange = np.linspace(-10, 10, 11)
-    
-    #get rotating bars
-    batches = generate_bars(degrange, sigrange, xrange, yrange)
+print("[Step 2]\tGenerating Rotating Bars...")
+#create a "distractor digit"
+x, y = dataset[6]
+x = x.numpy().reshape(28, 28)
+im = np.zeros((28, 28+14))
+im[:, 14: x.shape[1]+14] = x
+im = torch.FloatTensor(im.reshape(1, 28, 28+14))
 
-    print("[Step 3]\tRunning Network...")
-    #calculate the activations
-    attended, not_attended = calculate_activations(net, batches, im)
+degrange = np.linspace(0, 180, 21)
+sigrange = np.linspace(0.5, 2, 6)
+xrange = np.linspace(-15, -10, 11)
+yrange = np.linspace(-10, 10, 11)
 
-    print("[Step 4]\tPlotting Curves...")
-    plot_curves(attended_activations, not_attended_activations, degrange)
+#get rotating bars
+batches = generate_bars(degrange, sigrange, xrange, yrange)
 
-    print("[Done]")
+print("[Step 3]\tRunning Network...")
+#calculate the activations
+attended_activations, not_attended_activations = calculate_activations(net, batches, im)
+
+print("[Step 4]\tPlotting Curves...")
+plot_curves(attended_activations, not_attended_activations, degrange)
+
+print("[Done]")
 
