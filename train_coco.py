@@ -10,7 +10,8 @@ parser.add_argument('--metadatapath', type= str, default = 'data/metadata/cocome
 parser.add_argument('--strength', type= float, default = 0.9)
 parser.add_argument('--out', type = str, default='attn')
 parser.add_argument('--name', type = str, default='coco_model')
-parser.add_argument('--epochs', type = int, default=100)
+parser.add_argument('--epochs', type = int, default=60)
+parser.add_argument('--randomseed', type = int, default=2021)
 
 args = parser.parse_args()
 run_id = args.name
