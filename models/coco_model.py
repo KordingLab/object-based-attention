@@ -386,8 +386,10 @@ class Runner():
         return val_acc
     
     
-    def toshow(x): 
-        plt.imshow(
+    def toshow(self, x): 
+        x = x.detach().cpu().numpy()
+        plt.imshow(np.moveaxis(x, [0, 1, 2],[2, 0, 1]))
+        plt.show()
     
     def demo(self, x, data, labels):
         x = x.to(self.device)
@@ -413,6 +415,7 @@ class Runner():
 
             #get the masked input
             masked = self.net.latent["in"]
+
             maskarray.append(masked.detach().cpu().numpy().copy())
 
             #we want to find which digit the network selected
@@ -438,6 +441,10 @@ class Runner():
             out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
             out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
             out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
+
+            self.toshow(masked[0])
+            self.toshow(self.net.hidden["conv1_in"][0])
+            self.toshow(out_mask["conv1_in"][0])
         
     
     def get_metrics(self): 
