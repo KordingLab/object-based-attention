@@ -64,3 +64,32 @@ python test_coco.py [flags]
 
 ## Pre-trained Modules
 
+## Summary
+```
+project
+│   README.md
+│   test_coco.py
+|   test_mnist.py
+|   train_coco.py
+|   train_mnist.py    
+│
+└───analysis
+│   │   tuning_curves.py
+│   │
+│   └───tuning_curves       (figures)
+│   
+└───data
+│   │   coco_loader.py
+│   │   mnist_loader.py
+│   │
+│   └───metadata            (coco metadata)
+│   
+└───models
+│   │   coco_model.py
+│   │   mnist_model.py
+│   
+└───saved
+    │   metrics/            (.csv files)
+    │   models/             (.pt files)
+    |   plots/              (figures)
+```
