@@ -4,7 +4,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device', type= int, default = 3)
-parser.add_argument('--trainpath', type= str, default = '../../../data/jordanlei/coco/images/val2017')
+parser.add_argument('--testpath', type= str, default = '../../../data/jordanlei/coco/images/val2017')
 parser.add_argument('--annpath', type= str, default = '../../../data/jordanlei/coco/annotations/instances_val2017.json')
 parser.add_argument('--metadatapath', type= str, default = 'data/metadata/cocometadata_test.p')
 parser.add_argument('--strength', type= float, default = 0.9)
@@ -15,7 +15,7 @@ args = parser.parse_args()
 device =  torch.device("cuda:%s"%(args.device) if torch.cuda.is_available() else "cpu")
 
 strength = args.strength
-root = args.trainpath
+root = args.testpath
 annfile = args.annpath
 metadatafile = args.metadatapath
 
