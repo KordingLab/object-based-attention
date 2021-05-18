@@ -22,6 +22,8 @@ annfile = args.annpath
 metadatafile = args.metadatapath
 modelname = args.name
 
+torch.manual_seed(args.randomseed)
+
 coco_dataset, metadata = get_data(root, annfile, metadatafile, size = (100, 100), strength = strength, use_supercategory = True)
 train, val = get_train_val_split(coco_dataset)
 train_loader = DataLoader(train, batch_size = 32, shuffle = True, num_workers=4)

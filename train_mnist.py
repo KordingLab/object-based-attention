@@ -11,6 +11,7 @@ parser.add_argument('--resample', type = bool, default = True)
 parser.add_argument('--out', type = str, default='attn')
 parser.add_argument('--name', type = str, default='mnist_model')
 parser.add_argument('--randomseed', type = int, default=2021)
+parser.add_argument('--epochs', type = int, default=30)
 
 args = parser.parse_args()
 run_id = args.name
@@ -20,7 +21,7 @@ f = open(log, "w")
 f.write("\n")
 f.close()
 
-torch.manual_seed(args.randomseed)
+# torch.manual_seed(args.randomseed)
 
 def printwrite(x): 
     print(x)
@@ -36,22 +37,22 @@ dflist = []
 printwrite("Runing Attention Model...")
 
 #learning rate is 1e-3
-for lr in [1e-3]:
+for lr in [1e-2, 1e-3, 1e-4, 1e-5]:
 
     #penalty parameter = 1e3
-    for p in [1e3]:
+    for p in [0, 1e2, 1e3, 1e4, 1e5]:
         modelname = "%s_penalty_%s_lr_%s"%(run_id, p, lr)
         best_model = None
         best_score = -1
 
         #run for a single trial
-        for k in range(1): 
+        for k in range(5): 
             printwrite("[MODELNAME %s TRIAL %s]"%(modelname, k))
             net = Net((28, 28 + 14*(args.n -1)), strength = args.strength).to(device)
             optimizer = torch.optim.Adam(net.parameters(), lr = lr)
             criterion = nn.CrossEntropyLoss()
             runner = Runner(net, optimizer, criterion, penalty = p, n = args.n, device = device, name = modelname)
-            runner.train(train_loader, val_loader, epochs = 1)
+            runner.train(train_loader, val_loader, epochs = args.epochs)
 
             metric = runner.get_metrics()
             metric["final_acc"] = runner.test(val_loader, save = True)

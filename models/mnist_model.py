@@ -99,7 +99,6 @@ class Net(nn.Module):
     def initHidden(self, device, batch_size=64): 
         self.latent = {}
         self.hidden["conv1_in"] = torch.zeros((batch_size, 1, self.in_size[0], self.in_size[1])).to(device)
-        self.hidden["conv1_in_dsp"] = torch.zeros((batch_size, 1, self.in_size[0], self.in_size[1])).to(device)
         self.hidden["conv2_in"] = torch.zeros(self.maxpool1(self.conv1(self.hidden["conv1_in"])).shape).to(device)
 
 
@@ -225,8 +224,8 @@ class Runner():
                     self.metrics["loss"].append(loss.item())
                     self.metrics["step"].append(step)
                     
-                    out_mask["conv1_in"] = (out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5) > 0.5).type(torch.int)
-                    out_mask["conv2_in"] = (out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5) > 0.5).type(torch.int)
+                    out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                    out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
                 
                 if i%100 == 0:
                     print("\t[{}/{}] \t Accuracy:{:.3}   \tLoss: {:.3f}"\
@@ -288,8 +287,8 @@ class Runner():
                 total += len(selected_out)
                 total_correct += (pred==selected_out).sum().item()
                 
-                out_mask["conv1_in"] = (out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5) > 0.5).type(torch.int)
-                out_mask["conv2_in"] = (out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5) > 0.5).type(torch.int)
+                out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
         
         self.plot(maskarray, x = x.cpu().detach().numpy(), train = False, save = True)
 

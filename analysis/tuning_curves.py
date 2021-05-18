@@ -20,7 +20,6 @@ parser.add_argument('--n', type= int, default = 2)
 parser.add_argument('--strength', type= float, default = 0.2)
 parser.add_argument('--noise', type= float, default = 0.3)
 parser.add_argument('--resample', type = bool, default = True)
-parser.add_argument('--out', type = str, default='attn')
 parser.add_argument('--modelpath', type = str, default='../saved/models/paper_mnist_model.pt')
 
 
