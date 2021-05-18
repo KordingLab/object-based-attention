@@ -66,7 +66,7 @@ python test_coco.py [flags]
 
 ## Summary
 ```
-project
+object-based-attention
 │   README.md
 │   test_coco.py
 |   test_mnist.py
@@ -76,13 +76,13 @@ project
 └───analysis
 │   │   tuning_curves.py
 │   │
-│   └───tuning_curves       (figures)
+│   └───tuning_curves/      (figures)
 │   
 └───data
 │   │   coco_loader.py
 │   │   mnist_loader.py
 │   │
-│   └───metadata            (coco metadata)
+│   └───metadata/           (coco metadata)
 │   
 └───models
 │   │   coco_model.py
