@@ -56,8 +56,8 @@ python test_coco.py [flags]
 ```
 * **--testpath**: REQUIRED path to COCO test/validation images directory. e.g. `../coco_data/coco/images/val2017`
 * **--annpath**: REQUIRED path to COCO annotations file. e.g. `../coco_data/coco/annotations/instances_val2017.json`
-* **--metadata**: REQUIRED path to COCO metadata file. If this file does not exist, the script will automatically create it in the specified location. 
-* **--device**: cuda device, if one exists. Default 3Default `data/metadata/cocometadata_test.p`
+* **--metadata**: REQUIRED path to COCO metadata file. If this file does not exist, the script will automatically create it in the specified location. Default `data/metadata/cocometadata_test.p`
+* **--device**: cuda device, if one exists. Default 3
 * **--n**: number of objects. Default 2
 * **--strength**: float representing the strength of attention. Must be between 0.0 and 1.0, inclusive. Default 0.9
 * **--modelpath**: path to the model to evaluate, a .pt file. Default `saved/models/coco_model.pt`
