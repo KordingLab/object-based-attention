@@ -161,7 +161,7 @@ class Net(nn.Module):
         self.hidden["conv4_in"] = torch.zeros(batch_size, self.channels[3], self.h3_2, self.w3_2).to(device)
 
         
-class Runner():
+class Runner_deprecated():
     def __init__(self, net, optimizer, criterion, penalty = 1e-4, n=3, device = "cuda:3", name = "model"):
         self.device = device
         self.net = net.to(self.device)
@@ -390,62 +390,210 @@ class Runner():
         x = x.detach().cpu().numpy()
         plt.imshow(np.moveaxis(x, [0, 1, 2],[2, 0, 1]))
         plt.show()
-    
-    def demo(self, x, data, labels):
-        x = x.to(self.device)
-        data = [d.to(self.device) for d in data]
-        labels = [l.to(self.device) for l in labels]
-
-        self.net.initHidden(self.device, x.shape[0])
-        out_mask = {}
-
-        out_mask["out"] = torch.zeros(labels[0].shape[0], 10).to(self.device)
-        out_mask["conv1_in"] = torch.zeros_like(self.net.hidden["conv1_in"])
-        out_mask["conv2_in"] = torch.zeros_like(self.net.hidden["conv2_in"])
-        out_mask["conv3_in"] = torch.zeros_like(self.net.hidden["conv3_in"])
-        out_mask["conv4_in"] = torch.zeros_like(self.net.hidden["conv4_in"])
-        maskarray=[]
-
-        #set the choice mask to all false
-        findselectmask = torch.zeros((x.shape[0], self.n)).type(torch.bool)
-        for _ in range(self.n):
-            self.net.initHidden(self.device, x.shape[0])
-            for j in range(5): 
-                out = self.net(x, out_mask = out_mask)
-
-            #get the masked input
-            masked = self.net.latent["in"]
-
-            maskarray.append(masked.detach().cpu().numpy().copy())
-
-            #we want to find which digit the network selected
-            #to do this, we calculate the MSE with each of the objects
-            #and select the index of the one with the minimum from each sample
-            #the result is a batch_size x n matrix of losses
-            findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
-            findselect = torch.stack(findselect).T
-            findselect[findselectmask] = 1e10 #~infinity
-
-            #the selected digit is the argmin of these
-            select = torch.argmin(findselect, axis = 1)
-            findselectmask[np.arange(len(findselectmask)), select] = True
-
-            #concatenate y1 ... yn and index by output
-            merge_y = torch.cat([y.reshape(-1, 1) for y in labels], 1)
-            #selected out is the label corresponding with the maximum output
-            selected_out = merge_y[np.arange(len(merge_y)), select]
-
-            _, pred = torch.max(out, 1)
-
-            out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
-            out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
-            out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
-            out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
-
-            self.toshow(masked[0])
-            self.toshow(self.net.hidden["conv1_in"][0])
-            self.toshow(out_mask["conv1_in"][0])
         
+    def get_metrics(self): 
+        return self.metrics
+
+class Runner():
+    def __init__(self, net, optimizer, criterion, penalty = 1e-4, n=3, device = "cuda:3", name = "model"):
+        self.device = device
+        self.net = net.to(self.device)
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.penalty = penalty
+        self.metrics = defaultdict(lambda: [])
+        self.n = n
+        self.name = name
+    
+    def plot(self, maskarray, rows = 2, cols = 2, x = None, save = False, train = True): 
+        if train: 
+            folder = "saved/plots/train"
+        else:
+            folder = "saved/plots/val"
+        for n, masked in enumerate(maskarray): 
+            plt.figure()
+            fig, ax = plt.subplots(rows, cols, figsize = (cols * 5, rows*3))
+            for i in range(rows * cols): 
+                row = int(i / cols)
+                col = i % cols
+                mask = np.moveaxis(masked[i], [0, 1, 2],[2, 0, 1])
+                ax[row, col].imshow(mask)
+                ax[row, col].axis("off")
+            if save: 
+                savedir = "%s/%s_masked_%s"%(folder, self.name, n)
+                plt.savefig("%s.png"%savedir)
+            plt.show()
+
+        plt.figure()
+        if x is not None:
+            fig2, ax2 = plt.subplots(rows, cols, figsize = (cols * 5, rows * 3))
+            for i in range(rows * cols): 
+                row = int(i / cols)
+                col = i % cols
+                mask = np.moveaxis(x[i], [0, 1, 2],[2, 0, 1])
+                ax2[row, col].imshow(mask, cmap = "gray", vmin = 0, vmax = 1.1)
+                ax2[row, col].axis("off")
+        if save: 
+            savedir = "%s/%s_orig.png"%(folder, self.name)
+            plt.savefig("%s.png"%savedir)
+        plt.show()
+        
+    
+    def train(self, train_load, test_load = None, epochs = 10):
+        step = 0
+        for epoch in range(epochs):
+            if test_load is not None: 
+                self.test(test_load, step)
+            for i, (x, data, labels) in enumerate(train_load):
+                x = x.to(self.device)
+                data = [d.to(self.device) for d in data]
+                labels = [l.to(self.device) for l in labels]
+                
+                self.net.initHidden(self.device, x.shape[0])
+                maskarray = []
+                
+                #set the choice mask to all false
+                findselectmask = torch.zeros((x.shape[0], self.n)).type(torch.bool)
+                loss = 0
+                
+                #zero the optimizer
+                self.optimizer.zero_grad()
+                losses = 0
+
+                #select all images
+                for _ in range(self.n): 
+                    for j in range(5): 
+                        out = self.net(x)
+
+                    #get the masked input
+                    masked = self.net.latent["in"]
+                    maskarray.append(masked.cpu().detach().numpy().copy())
+
+
+                    #we want to find which digit the network selected
+                    #to do this, we calculate the MSE with each of the objects
+                    #and select the index of the one with the minimum from each sample
+                    #the result is a batch_size x n matrix of losses
+                    findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
+                    findselect = torch.stack(findselect).T
+                    #the findselect mask will make sure we don't choose the same object twice
+                    findselect[findselectmask] = 1e10 #~infinity
+
+                    #the selected digit is the argmin of these
+                    select = torch.argmin(findselect, axis = 1)
+                    findselectmask[np.arange(len(findselectmask)), select] = True
+
+                    #concatenate y1 ... yn and index by output
+                    merge_y = torch.cat([y.reshape(-1, 1) for y in labels], 1)
+                    #selected out is the label corresponding with the maximum output
+                    selected_out = merge_y[np.arange(len(merge_y)), select]
+
+                    #concatenate x1 and x2, and then index by selection
+                    merge_x = torch.stack(data, 1)
+                    #selected x will be used for reconstruction error
+                    selected_x = merge_x[np.arange(len(merge_x)), select].reshape(x.shape)
+
+                    #reconstruction error on the masked input
+                    mask_loss = nn.MSELoss()(masked, selected_x)
+                    class_loss = self.criterion(out, selected_out)
+                    
+                    #loss is the composition of the class loss and the mask error
+                    loss = class_loss + self.penalty*mask_loss
+                    losses += loss
+
+                    _, pred = torch.max(out, 1)
+                    
+                    acc = ((pred==selected_out).float().sum()/len(pred)).item()
+                    
+                    categories = np.arange(self.net.out_size)
+                    predictions = pred.detach().cpu().tolist()
+                    ground_truth = selected_out.detach().cpu().tolist()
+                    f1 = f1_score(ground_truth, predictions, average = 'macro')
+
+                    self.metrics["acc"].append(acc)
+                    self.metrics["smooth_acc"].append(np.mean(self.metrics["acc"][-100:]))
+                    self.metrics["f1"].append(f1)
+                    self.metrics["smooth_f1"].append(np.mean(self.metrics["f1"][-100:]))
+                    
+                    self.metrics["loss"].append(loss.item())
+                    self.metrics["step"].append(step)
+                    
+                losses.backward()
+                self.optimizer.step()
+                
+                if i%10 == 0:
+                    print("\t[{}/{}] \t Accuracy:{:.3f}\tF1:{:.3f}\tLoss: {:.3f}"\
+                              .format(epoch+1, epochs, self.metrics["smooth_acc"][-1],\
+                                      self.metrics["smooth_f1"][-1],\
+                                      np.mean(self.metrics["loss"][-100:])))
+                    
+                if step%100 == 0: 
+                    self.plot(maskarray, x = x.cpu().detach().numpy(), save = True)
+                    
+                step += 1
+                          
+    def test(self, test_load, step= None, save = True): 
+        print("Validating ...")
+        total_correct = 0
+        ground_truth = []
+        predictions = []
+        
+        for i, (x, data, labels) in enumerate(test_load): 
+            x = x.to(self.device)
+            data = [d.to(self.device) for d in data]
+            labels = [l.to(self.device) for l in labels]
+
+            self.net.initHidden(self.device, x.shape[0])
+            maskarray=[]
+            
+            #set the choice mask to all false
+            findselectmask = torch.zeros((x.shape[0], self.n)).type(torch.bool)
+            
+            for _ in range(self.n):
+                for j in range(5): 
+                    out = self.net(x)
+                
+                #get the masked input
+                masked = self.net.latent["in"]
+                maskarray.append(masked.detach().cpu().numpy().copy())
+
+                #we want to find which digit the network selected
+                #to do this, we calculate the MSE with each of the objects
+                #and select the index of the one with the minimum from each sample
+                #the result is a batch_size x n matrix of losses
+                findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
+                findselect = torch.stack(findselect).T
+                findselect[findselectmask] = 1e10 #~infinity
+                
+                #the selected digit is the argmin of these
+                select = torch.argmin(findselect, axis = 1)
+                findselectmask[np.arange(len(findselectmask)), select] = True
+
+                #concatenate y1 ... yn and index by output
+                merge_y = torch.cat([y.reshape(-1, 1) for y in labels], 1)
+                #selected out is the label corresponding with the maximum output
+                selected_out = merge_y[np.arange(len(merge_y)), select]
+
+                _, pred = torch.max(out, 1)
+
+                ground_truth += selected_out.detach().cpu().tolist()
+                predictions += pred.detach().cpu().tolist()
+                
+        self.plot(maskarray, x = x.cpu().detach().numpy(), train = False, save = True)
+
+        val_acc = (np.array(ground_truth) == np.array(predictions)).mean()
+        categories = np.arange(self.net.out_size)
+        cmatrix = confusion_matrix(ground_truth, predictions, labels = categories, normalize = 'true')
+        f1 = f1_score(ground_truth, predictions, labels = categories, average = 'macro')
+        plt.imshow(cmatrix)
+        plt.show()
+        
+        if step is not None: 
+            self.metrics["val_acc"].append(val_acc)
+            self.metrics["val_step"].append(step)
+            self.metrics["val_f1"].append(f1)
+            print("\t[Validation] Acc %.4f\tF1 %.4f"%(val_acc, f1))
+        return val_acc
     
     def get_metrics(self): 
         return self.metrics
