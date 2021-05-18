@@ -294,13 +294,10 @@ class Runner():
                     self.metrics["loss"].append(loss.item())
                     self.metrics["step"].append(step)
                     
-                    out_mask["conv1_in"] = (out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5) > 0.5).type(torch.int)
-                    out_mask["conv2_in"] = (out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5) > 0.5).type(torch.int)
-                    out_mask["conv3_in"] = (out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5) > 0.5).type(torch.int)
-                    out_mask["conv4_in"] = (out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5) > 0.5).type(torch.int)
-                    
-                
-                
+                    out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                    out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                    out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
+                    out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
                 
                 if i%10 == 0:
                     print("\t[{}/{}] \t Accuracy:{:.3f}\tF1:{:.3f}\tLoss: {:.3f}"\
@@ -367,10 +364,10 @@ class Runner():
                 ground_truth += selected_out.detach().cpu().tolist()
                 predictions += pred.detach().cpu().tolist()
                 
-                out_mask["conv1_in"] = (out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5) > 0.5).type(torch.int)
-                out_mask["conv2_in"] = (out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5) > 0.5).type(torch.int)
-                out_mask["conv3_in"] = (out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5) > 0.5).type(torch.int)
-                out_mask["conv4_in"] = (out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5) > 0.5).type(torch.int)
+                out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
+                out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
                 
         self.plot(maskarray, x = x.cpu().detach().numpy(), train = False, save = True)
 
@@ -387,6 +384,61 @@ class Runner():
             self.metrics["val_f1"].append(f1)
             print("\t[Validation] Acc %.4f\tF1 %.4f"%(val_acc, f1))
         return val_acc
+    
+    
+    def toshow(x): 
+        plt.imshow(
+    
+    def demo(self, x, data, labels):
+        x = x.to(self.device)
+        data = [d.to(self.device) for d in data]
+        labels = [l.to(self.device) for l in labels]
+
+        self.net.initHidden(self.device, x.shape[0])
+        out_mask = {}
+
+        out_mask["out"] = torch.zeros(labels[0].shape[0], 10).to(self.device)
+        out_mask["conv1_in"] = torch.zeros_like(self.net.hidden["conv1_in"])
+        out_mask["conv2_in"] = torch.zeros_like(self.net.hidden["conv2_in"])
+        out_mask["conv3_in"] = torch.zeros_like(self.net.hidden["conv3_in"])
+        out_mask["conv4_in"] = torch.zeros_like(self.net.hidden["conv4_in"])
+        maskarray=[]
+
+        #set the choice mask to all false
+        findselectmask = torch.zeros((x.shape[0], self.n)).type(torch.bool)
+        for _ in range(self.n):
+            self.net.initHidden(self.device, x.shape[0])
+            for j in range(5): 
+                out = self.net(x, out_mask = out_mask)
+
+            #get the masked input
+            masked = self.net.latent["in"]
+            maskarray.append(masked.detach().cpu().numpy().copy())
+
+            #we want to find which digit the network selected
+            #to do this, we calculate the MSE with each of the objects
+            #and select the index of the one with the minimum from each sample
+            #the result is a batch_size x n matrix of losses
+            findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
+            findselect = torch.stack(findselect).T
+            findselect[findselectmask] = 1e10 #~infinity
+
+            #the selected digit is the argmin of these
+            select = torch.argmin(findselect, axis = 1)
+            findselectmask[np.arange(len(findselectmask)), select] = True
+
+            #concatenate y1 ... yn and index by output
+            merge_y = torch.cat([y.reshape(-1, 1) for y in labels], 1)
+            #selected out is the label corresponding with the maximum output
+            selected_out = merge_y[np.arange(len(merge_y)), select]
+
+            _, pred = torch.max(out, 1)
+
+            out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+            out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+            out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
+            out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
+        
     
     def get_metrics(self): 
         return self.metrics

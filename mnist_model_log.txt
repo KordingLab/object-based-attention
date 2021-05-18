@@ -1,0 +1,5 @@
+
+MNIST ATTENTION MODEL
+#DIGITS: 2 STRENGTH: 0.2 NOISE: 0.3
+Runing Attention Model...
+[MODELNAME mnist_model_penalty_0_lr_0.01 TRIAL 0]
