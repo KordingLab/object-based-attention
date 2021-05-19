@@ -92,11 +92,22 @@ def calculate_activations(net, batches, im, conv_layers = ["conv1_out", "conv2_o
 
             for _ in range(2):
                 net.initHidden(device, x.shape[0])
-                for _ in range(5): 
+                
+                #run T-1 iterations
+                for _ in range(4): 
                     out = net(x, out_mask = out_mask)
+                
+                #our new gating mask
+                new_out_mask = {}
+                new_out_mask["conv1_in"] = ((out_mask["conv1_in"] + (net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                new_out_mask["conv2_in"] = ((out_mask["conv2_in"] + (net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                
+                #run our final iteration
+                out = net(x, out_mask = out_mask)
 
                 data = [bar, digit]
-                masked = net.latent["in"]
+                
+                masked = self.net.latent["in"]
                 findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
                 findselect = torch.stack(findselect).T
                 findselect[findselectmask] = 1e10
@@ -112,8 +123,8 @@ def calculate_activations(net, batches, im, conv_layers = ["conv1_out", "conv2_o
                     attended[layer].append(conv_out[attended_index])
                     not_attended[layer].append(conv_out[not_attended_index])
 
-                out_mask["conv1_in"] = (out_mask["conv1_in"] + (net.hidden["conv1_in"] < 0.5) > 0.5).type(torch.int)
-                out_mask["conv2_in"] = (out_mask["conv2_in"] + (net.hidden["conv2_in"] < 0.5) > 0.5).type(torch.int)
+                #set the new gating mask
+                out_mask = new_out_mask
 
             for layer in conv_layers: 
                 att = torch.cat(attended[layer], 0)

@@ -35,7 +35,7 @@ dflist = []
 printwrite("Runing Attention Model...")
 
 #learning rate is 1e-3
-for lr in [1e-2, 1e-3, 1e-4, 1e-5]:
+for lr in [1e-5]:
 
     #penalty parameter = 1e3
     for p in [0, 1e2, 1e3, 1e4, 1e5]:

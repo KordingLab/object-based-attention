@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix, f1_score
 class Net(nn.Module):
     def __init__(self, in_size = (100, 100), out_size=12, hidden_size = 100, strength = 1):
         super(Net, self).__init__()
-        print("COCO Object Based Attention Model")
+        print("COCO Object-Based Attention Model v2")
         self.out_size = out_size
         self.in_size = in_size
         self.hidden_size = hidden_size
@@ -80,9 +80,6 @@ class Net(nn.Module):
         return ((x - k + 2*padding) // stride + 1)
 
     def forward(self, x, hidden = None, out_mask = None):
-        shape = x.shape
-        masked = x
-        
         x = x * (1 - self.strength * self.hidden["conv1_in"])
         self.latent["in"] = x
         
@@ -161,7 +158,7 @@ class Net(nn.Module):
         self.hidden["conv4_in"] = torch.zeros(batch_size, self.channels[3], self.h3_2, self.w3_2).to(device)
 
         
-class Runner_deprecated():
+class Runner():
     def __init__(self, net, optimizer, criterion, penalty = 1e-4, n=3, device = "cuda:3", name = "model"):
         self.device = device
         self.net = net.to(self.device)
@@ -236,8 +233,21 @@ class Runner_deprecated():
                     
                     #initialize hidden vector
                     self.net.initHidden(self.device, x.shape[0])
-                    for j in range(5): 
+                    
+                    #run for T-1 iterations
+                    for j in range(4): 
                         out = self.net(x, out_mask = out_mask)
+                    
+                    #get the new gating mask
+                    new_out_mask = {}
+                    new_out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                    new_out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                    new_out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
+                    new_out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
+                    
+                    #run the final iteration
+                    out = self.net(x, out_mask = out_mask)
+                
 
                     #get the masked input
                     masked = self.net.latent["in"]
@@ -294,11 +304,10 @@ class Runner_deprecated():
                     self.metrics["loss"].append(loss.item())
                     self.metrics["step"].append(step)
                     
-                    out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
-                    out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
-                    out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
-                    out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
-                
+                    #set the new gating mask
+                    out_mask = new_out_mask
+                    
+                    
                 if i%10 == 0:
                     print("\t[{}/{}] \t Accuracy:{:.3f}\tF1:{:.3f}\tLoss: {:.3f}"\
                               .format(epoch+1, epochs, self.metrics["smooth_acc"][-1],\
@@ -335,8 +344,19 @@ class Runner_deprecated():
             findselectmask = torch.zeros((x.shape[0], self.n)).type(torch.bool)
             for _ in range(self.n):
                 self.net.initHidden(self.device, x.shape[0])
-                for j in range(5): 
+                #run T-1 iterations
+                for j in range(4): 
                     out = self.net(x, out_mask = out_mask)
+                
+                #create new gating mask
+                new_out_mask = {}
+                new_out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                new_out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                new_out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
+                new_out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
+                
+                #run the final iteration
+                out = self.net(x, out_mask = out_mask)
                 
                 #get the masked input
                 masked = self.net.latent["in"]
@@ -364,10 +384,8 @@ class Runner_deprecated():
                 ground_truth += selected_out.detach().cpu().tolist()
                 predictions += pred.detach().cpu().tolist()
                 
-                out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
-                out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
-                out_mask["conv3_in"] = ((out_mask["conv3_in"] + (self.net.hidden["conv3_in"] < 0.5)) > 0.5).type(torch.int)
-                out_mask["conv4_in"] = ((out_mask["conv4_in"] + (self.net.hidden["conv4_in"] < 0.5)) > 0.5).type(torch.int)
+                #set the new gating mask
+                out_mask = new_out_mask
                 
         self.plot(maskarray, x = x.cpu().detach().numpy(), train = False, save = True)
 
@@ -394,7 +412,7 @@ class Runner_deprecated():
     def get_metrics(self): 
         return self.metrics
 
-class Runner():
+class Runner_deprecated():
     def __init__(self, net, optimizer, criterion, penalty = 1e-4, n=3, device = "cuda:3", name = "model"):
         self.device = device
         self.net = net.to(self.device)
@@ -464,7 +482,7 @@ class Runner():
                 for _ in range(self.n): 
                     for j in range(5): 
                         out = self.net(x)
-
+                        
                     #get the masked input
                     masked = self.net.latent["in"]
                     maskarray.append(masked.cpu().detach().numpy().copy())

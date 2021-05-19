@@ -13,7 +13,7 @@ from collections import defaultdict
 class Net(nn.Module):
     def __init__(self, in_size = (28, 28), out_size=10, hidden_size = 100, strength = 1):
         super(Net, self).__init__()
-        print("MNIST Object Based Attention Model")
+        print("MNIST Object Based Attention Model v2")
         self.out_size = out_size
         self.in_size = in_size
         self.hidden_size = hidden_size
@@ -55,9 +55,6 @@ class Net(nn.Module):
         
         
     def forward(self, x, hidden = None, out_mask = None):
-        shape = x.shape
-        masked = x
-        
         x = x * (1 - self.strength * self.hidden["conv1_in"])
         self.latent["in"] = x
         
@@ -176,8 +173,18 @@ class Runner():
                     
                     #initialize hidden vector
                     self.net.initHidden(self.device, x.shape[0])
-                    for j in range(5): 
+                    
+                    #run T-1 iterations
+                    for j in range(4): 
                         out = self.net(x, out_mask = out_mask)
+                    
+                    #our new gating mask
+                    new_out_mask = {}
+                    new_out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                    new_out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                    
+                    #run the final iteration
+                    out = self.net(x, out_mask = out_mask)
 
                     #get the masked input
                     masked = self.net.latent["in"]
@@ -224,8 +231,8 @@ class Runner():
                     self.metrics["loss"].append(loss.item())
                     self.metrics["step"].append(step)
                     
-                    out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
-                    out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                    #set the gating mask
+                    out_mask = new_out_mask
                 
                 if i%100 == 0:
                     print("\t[{}/{}] \t Accuracy:{:.3}   \tLoss: {:.3f}"\
@@ -258,8 +265,18 @@ class Runner():
             findselectmask = torch.zeros((x.shape[0], self.n)).type(torch.bool)
             for _ in range(self.n):
                 self.net.initHidden(self.device, x.shape[0])
-                for j in range(5): 
+                
+                #run T-1 iterations
+                for j in range(4): 
                     out = self.net(x, out_mask = out_mask)
+                
+                #our new gating mask
+                new_out_mask = {}
+                new_out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                new_out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                
+                #run our final iteration
+                out = self.net(x, out_mask = out_mask)
                 
                 #get the masked input
                 masked = self.net.latent["in"]
@@ -287,8 +304,8 @@ class Runner():
                 total += len(selected_out)
                 total_correct += (pred==selected_out).sum().item()
                 
-                out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
-                out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                #set the gating mask
+                out_mask = new_out_mask
         
         self.plot(maskarray, x = x.cpu().detach().numpy(), train = False, save = True)
 
