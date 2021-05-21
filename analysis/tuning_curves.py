@@ -107,7 +107,7 @@ def calculate_activations(net, batches, im, conv_layers = ["conv1_out", "conv2_o
 
                 data = [bar, digit]
                 
-                masked = self.net.latent["in"]
+                masked = net.latent["in"]
                 findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
                 findselect = torch.stack(findselect).T
                 findselect[findselectmask] = 1e10

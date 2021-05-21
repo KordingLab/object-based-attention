@@ -9,7 +9,7 @@ parser.add_argument('--strength', type= float, default = 0.2)
 parser.add_argument('--noise', type= float, default = 0.3)
 parser.add_argument('--name', type = str, default='mnist_model')
 parser.add_argument('--randomseed', type = int, default=2021)
-parser.add_argument('--epochs', type = int, default=30)
+parser.add_argument('--epochs', type = int, default=10)
 
 args = parser.parse_args()
 run_id = args.name
@@ -38,7 +38,7 @@ printwrite("Runing Attention Model...")
 for lr in [1e-5]:
 
     #penalty parameter = 1e3
-    for p in [0, 1e2, 1e3, 1e4, 1e5]:
+    for p in [0, 1e1, 1e2, 1e3, 1e4]:
         modelname = "%s_penalty_%s_lr_%s"%(run_id, p, lr)
         best_model = None
         best_score = -1

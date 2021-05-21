@@ -7,7 +7,7 @@ parser.add_argument('--device', type= int, default = 3)
 parser.add_argument('--n', type= int, default = 2)
 parser.add_argument('--strength', type= float, default = 0.2)
 parser.add_argument('--noise', type= float, default = 0.3)
-parser.add_argument('--modelpath', type = str, default='saved/models/mnist_model.pt')
+parser.add_argument('--modelpath', type = str, default='saved/models/paper_mnist_model.pt')
 
 args = parser.parse_args()
 device =  torch.device("cuda:%s"%(args.device) if torch.cuda.is_available() else "cpu")
