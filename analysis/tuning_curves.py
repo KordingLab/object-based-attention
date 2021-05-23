@@ -167,7 +167,7 @@ def plot_curves(attended_activations, not_attended_activations, degrange):
             if not os.path.exists(my_folder):
                 os.makedirs(my_folder)
 
-            plt.savefig("%s/%s.png"%(my_folder, i), format = "png")
+            plt.savefig("%s/%s.svg"%(my_folder, i), format = "svg")
 
          
 
