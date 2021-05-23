@@ -63,6 +63,8 @@ python test_coco.py [flags]
 * **--modelpath**: path to the model to evaluate, a .pt file. Default `saved/models/coco_model.pt`
 
 ## Pre-trained Modules
+* The saved model trained on handwritten digits can be found at `saved/models/mnist_model.pt`
+* The saved model trained on natural images can be found at `saved/models/coco_model.pt`
 
 ## Summary
 ```
@@ -75,8 +77,12 @@ object-based-attention
 │
 └───analysis
 │   │   tuning_curves.py
+│   │   graphs.py
+│   │   visualizations.py
 │   │
 │   └───tuning_curves/      (figures)
+│   └───graphs/             (figures)
+│   └───visualizations/     (figures)
 │   
 └───data
 │   │   coco_loader.py
