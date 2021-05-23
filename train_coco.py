@@ -12,16 +12,33 @@ parser.add_argument('--out', type = str, default='attn')
 parser.add_argument('--name', type = str, default='coco_attention_model3')
 parser.add_argument('--epochs', type = int, default=100)
 parser.add_argument('--randomseed', type = int, default=100)
+parser.add_argument('--lr', type = float, default=0.0001)
+parser.add_argument('--penalty', type = float, default=5000)
 
 args = parser.parse_args()
 run_id = args.name
 device =  torch.device("cuda:%s"%(args.device) if torch.cuda.is_available() else "cpu")
 
+log = run_id + "_log.txt"
+f = open(log, "w")
+f.write("\n")
+f.close()
+
+def printwrite(x): 
+    print(x)
+    f = open(log, "a")
+    f.write(x + "\n")
+    f.close()
+    
 strength = args.strength
 root = args.trainpath
 annfile = args.annpath
 metadatafile = args.metadatapath
 modelname = args.name
+lr = args.lr
+penalty = args.penalty
+
+printwrite("COCO ATTENTION MODEL %s\n#OBJECTS: %s STRENGTH: %s LR: %s PHI: %s"%(modelname, 2, strength, lr, penalty))
 
 torch.manual_seed(args.randomseed)
 
@@ -56,12 +73,12 @@ sweights = [sweights[i] for i in range(len(sweights))]
 
 dflist = []
 net = Net(strength = strength).to(device)
-optimizer = torch.optim.Adam(net.parameters(), lr = 0.001)
+optimizer = torch.optim.Adam(net.parameters(), lr = lr)
 
 class_weights = torch.Tensor(sweights).to(device)
 criterion = nn.CrossEntropyLoss(weight = class_weights)
 
-runner = Runner(net, optimizer, criterion, penalty = 1000, n=2, device = device, name = modelname)
+runner = Runner(net, optimizer, criterion, penalty = penalty, n=2, device = device, name = modelname)
 runner.train(train_loader, val_loader, epochs = args.epochs)
 metric = runner.get_metrics()
 metric["final_acc"] = runner.test(val_loader, save = True)
