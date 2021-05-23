@@ -316,5 +316,69 @@ class Runner():
             print("\t[Validation Acc] %.4f"%(val_acc))
         return val_acc
     
+    def visualize(self, x, data, labels):
+        with torch.no_grad():
+            x = x.to(self.device)
+            data = [d.to(self.device) for d in data]
+            labels = [l.to(self.device) for l in labels]
+
+            self.net.initHidden(self.device, x.shape[0])
+            out_mask = {}
+            out_mask["conv1_in"] = torch.zeros_like(self.net.hidden["conv1_in"])
+            out_mask["conv2_in"] = torch.zeros_like(self.net.hidden["conv2_in"])
+
+            masks = []
+            hiddens = []
+            ior = []
+            
+            #set the choice mask to all false
+            findselectmask = torch.zeros((x.shape[0], self.n)).type(torch.bool)
+            for _ in range(self.n):
+                self.net.initHidden(self.device, x.shape[0])
+                
+                #run T-1 iterations
+                for j in range(4): 
+                    out = self.net(x, out_mask = out_mask)
+                
+                #our new gating mask
+                new_out_mask = {}
+                new_out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
+                new_out_mask["conv2_in"] = ((out_mask["conv2_in"] + (self.net.hidden["conv2_in"] < 0.5)) > 0.5).type(torch.int)
+                
+                #run our final iteration
+                out = self.net(x, out_mask = out_mask)
+                
+                #get the masked input
+                masked = self.net.latent["in"]
+
+                #we want to find which digit the network selected
+                #to do this, we calculate the MSE with each of the objects
+                #and select the index of the one with the minimum from each sample
+                #the result is a batch_size x n matrix of losses
+                findselect = [torch.sum(torch.nn.MSELoss(reduction='none')(masked, x).detach(), dim= [1, 2, 3]) for x in data]
+                findselect = torch.stack(findselect).T
+                findselect[findselectmask] = 1e10 #~infinity
+                
+                #the selected digit is the argmin of these
+                select = torch.argmin(findselect, axis = 1)
+                findselectmask[np.arange(len(findselectmask)), select] = True
+
+                #concatenate y1 ... yn and index by output
+                merge_y = torch.cat([y.reshape(-1, 1) for y in labels], 1)
+                #selected out is the label corresponding with the maximum output
+                selected_out = merge_y[np.arange(len(merge_y)), select]
+                
+                #set the gating mask
+                out_mask = new_out_mask
+
+                masks.append(masked.detach().cpu().numpy())
+                hiddens.append(self.net.hidden["conv1_in"].detach().cpu().numpy())
+                ior.append(out_mask["conv1_in"].detach().cpu().numpy())
+            
+            return masks, hiddens, ior
+            
+    def toshow(self, x): 
+        return x.detach().cpu().numpy()
+        
     def get_metrics(self): 
         return self.metrics

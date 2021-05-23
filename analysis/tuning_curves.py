@@ -44,14 +44,14 @@ def bars(deg = 0, sigma = 1.5, x = 0, y = 0, shape = (28, 28+14), length = 20):
     img = np.array(img)
     return img
 
-def generate_bars(degrange, sigrange, xrange, yrange): 
+def generate_bars(degrange, sigrange, xrange, yrange, shape = (28, 28+14)): 
     batches = []
     for deg in degrange:
         batch = []
         for sig in sigrange: 
             for x in xrange: 
                 for y in yrange: 
-                    img = bars(deg = deg, x = x, y = y, sigma = sig)
+                    img = bars(deg = deg, x = x, y = y, sigma = sig, shape = shape)
                     batch.append(np.array([img]))
         batch = torch.FloatTensor(np.array(batch))
         batches.append(batch)
@@ -178,7 +178,8 @@ dataset = torchvision.datasets.MNIST("../mnist", download = True,\
         transform = torchvision.transforms.ToTensor())
 
 print(args.modelpath)
-net = Net((28, 28+14), strength = args.strength).to(device)
+shape = (28, 28 + 14*(args.n-1))
+net = Net(shape, strength = args.strength).to(device)
 net.load_state_dict(torch.load(args.modelpath))
 net.eval()
 
@@ -186,9 +187,9 @@ print("[Step 2]\tGenerating Rotating Bars...")
 #create a "distractor digit"
 x, y = dataset[6]
 x = x.numpy().reshape(28, 28)
-im = np.zeros((28, 28+14))
+im = np.zeros(shape)
 im[:, 14: x.shape[1]+14] = x
-im = torch.FloatTensor(im.reshape(1, 28, 28+14))
+im = torch.FloatTensor(im.reshape(1, shape[0], shape[1]))
 
 degrange = np.linspace(0, 180, 21)
 sigrange = np.linspace(0.5, 2, 6)
@@ -196,7 +197,7 @@ xrange = np.linspace(-15, -10, 11)
 yrange = np.linspace(-10, 10, 11)
 
 #get rotating bars
-batches = generate_bars(degrange, sigrange, xrange, yrange)
+batches = generate_bars(degrange, sigrange, xrange, yrange, shape = shape)
 
 print("[Step 3]\tRunning Network...")
 #calculate the activations
