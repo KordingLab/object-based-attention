@@ -100,7 +100,7 @@ class Net(nn.Module):
 
 
 class Runner():
-    def __init__(self, net, optimizer, criterion, penalty = 1e-4, n=3, device = "cuda:3", name = "model"):
+    def __init__(self, net, optimizer, criterion, penalty = 1e-4, n=2, device = "cuda:3", name = "model"):
         self.device = device
         self.net = net.to(self.device)
         self.criterion = criterion
@@ -340,6 +340,8 @@ class Runner():
                 for j in range(4): 
                     out = self.net(x, out_mask = out_mask)
                 
+                hiddens.append(self.net.hidden["conv1_in"].detach().cpu().numpy())
+                
                 #our new gating mask
                 new_out_mask = {}
                 new_out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
@@ -372,13 +374,12 @@ class Runner():
                 out_mask = new_out_mask
 
                 masks.append(masked.detach().cpu().numpy())
-                hiddens.append(self.net.hidden["conv1_in"].detach().cpu().numpy())
                 ior.append(out_mask["conv1_in"].detach().cpu().numpy())
             
             return masks, hiddens, ior
             
     def toshow(self, x): 
-        return x.detach().cpu().numpy()
+        return x[0]
         
     def get_metrics(self): 
         return self.metrics

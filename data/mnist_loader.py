@@ -77,15 +77,16 @@ class MultiMNIST(Dataset):
     def __len__(self): 
         return self.dataset.__len__()
 
-def get_data(verbose = True, n = 2, strength = 1, noise = 0.0, resample = False): 
-    dataset = torchvision.datasets.MNIST("mnist", download = True,\
+def get_data(mnistdir = "mnist", verbose = True, n = 2, strength = 1, noise = 0.0, resample = False):
+    print(mnistdir)
+    dataset = torchvision.datasets.MNIST(mnistdir, download = True,\
           transform = torchvision.transforms.ToTensor())
     train_size = int(len(dataset) * 0.7)
     train, val = torch.utils.data.random_split(dataset, [train_size, len(dataset) - train_size])
     train_mmnist = MultiMNIST(train, train = True, n = n, strength = strength, noise = noise, resample = resample)
     val_mmnist = MultiMNIST(val, train = False, n = n, strength = strength, noise = noise, resample = resample)
     
-    test = torchvision.datasets.MNIST("mnist", train = False, download = True,\
+    test = torchvision.datasets.MNIST(mnistdir, train = False, download = True,\
           transform = torchvision.transforms.ToTensor())
     test_mmnist = MultiMNIST(test, train = False, n = n, strength = strength, noise = noise, resample = resample)
 

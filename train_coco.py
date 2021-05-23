@@ -9,7 +9,7 @@ parser.add_argument('--annpath', type= str, default = '../../../data/jordanlei/c
 parser.add_argument('--metadatapath', type= str, default = 'data/metadata/cocometadata_train.p')
 parser.add_argument('--strength', type= float, default = 0.9)
 parser.add_argument('--out', type = str, default='attn')
-parser.add_argument('--name', type = str, default='coco_attention_model2')
+parser.add_argument('--name', type = str, default='coco_attention_model3')
 parser.add_argument('--epochs', type = int, default=100)
 parser.add_argument('--randomseed', type = int, default=100)
 
@@ -56,12 +56,12 @@ sweights = [sweights[i] for i in range(len(sweights))]
 
 dflist = []
 net = Net(strength = strength).to(device)
-optimizer = torch.optim.Adam(net.parameters(), lr = 0.0001)
+optimizer = torch.optim.Adam(net.parameters(), lr = 0.001)
 
 class_weights = torch.Tensor(sweights).to(device)
 criterion = nn.CrossEntropyLoss(weight = class_weights)
 
-runner = Runner(net, optimizer, criterion, penalty = 10000, n=2, device = device, name = modelname)
+runner = Runner(net, optimizer, criterion, penalty = 1000, n=2, device = device, name = modelname)
 runner.train(train_loader, val_loader, epochs = args.epochs)
 metric = runner.get_metrics()
 metric["final_acc"] = runner.test(val_loader, save = True)

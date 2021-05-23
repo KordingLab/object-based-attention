@@ -22,14 +22,15 @@ def files_to_df(metric_files):
         file = "../saved/metrics/" + metric
         df = pd.read_csv(file)
         dfs.append(df.copy())
-
+        
+    df = pd.concat(dfs)
     df["train_acc"] = df["smooth_acc"].apply(lambda x: get_final(x))
     df["convert_train"] = df["smooth_acc"].apply(lambda x: convert(x))
     df["convert_train_steps"] = df["step"].apply(lambda x: convert(x))
 
     df["convert_val"] = df["val_acc"].apply(lambda x: convert(x))
     df["convert_val_steps"] = df["val_step"].apply(lambda x: convert(x))
-    df = pd.concat(dfs)
+    
     return df
 
 def format_lineplot(metric, steps = None, every = 1):

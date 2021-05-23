@@ -1,7 +1,9 @@
+import sklearn
+from sklearn.metrics import confusion_matrix, f1_score
+
 import torchvision
 import torch
 import numpy as np
-import sklearn
 import pandas as pd
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -10,7 +12,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import pandas as pd
 from collections import defaultdict
-from sklearn.metrics import confusion_matrix, f1_score
+
 
 
 class Net(nn.Module):
@@ -159,7 +161,7 @@ class Net(nn.Module):
 
         
 class Runner():
-    def __init__(self, net, optimizer, criterion, penalty = 1e-4, n=3, device = "cuda:3", name = "model"):
+    def __init__(self, net, optimizer, criterion, penalty = 1e-4, n=2, device = "cuda:3", name = "model"):
         self.device = device
         self.net = net.to(self.device)
         self.criterion = criterion
@@ -428,6 +430,8 @@ class Runner():
                 for j in range(4): 
                     out = self.net(x, out_mask = out_mask)
                 
+                hiddens.append(self.net.hidden["conv1_in"].detach().cpu().numpy())
+                
                 #create new gating mask
                 new_out_mask = {}
                 new_out_mask["conv1_in"] = ((out_mask["conv1_in"] + (self.net.hidden["conv1_in"] < 0.5)) > 0.5).type(torch.int)
@@ -462,13 +466,11 @@ class Runner():
                 out_mask = new_out_mask
 
                 masks.append(masked.detach().cpu().numpy())
-                hiddens.append(self.net.hidden["conv1_in"].detach().cpu().numpy())
                 ior.append(out_mask["conv1_in"].detach().cpu().numpy())
 
             return masks, hiddens, ior
     
     def toshow(self, x): 
-        x = x.detach().cpu().numpy()
         return np.moveaxis(x, [0, 1, 2],[2, 0, 1])
         
     def get_metrics(self): 

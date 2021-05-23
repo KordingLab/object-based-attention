@@ -4,7 +4,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device', type= int, default = 3)
-parser.add_argument('--n', type= int, default = 2)
+parser.add_argument('--n', type= int, default = 3)
 parser.add_argument('--strength', type= float, default = 0.2)
 parser.add_argument('--noise', type= float, default = 0.3)
 parser.add_argument('--name', type = str, default='mnist_model')
@@ -38,7 +38,7 @@ printwrite("Runing Attention Model...")
 for lr in [1e-5]:
 
     #penalty parameter = 1e3
-    for p in [0, 1e1, 1e2, 1e3, 1e4]:
+    for p in [0, 1e2, 1e3, 1e4, 1e5]:
         modelname = "%s_penalty_%s_lr_%s"%(run_id, p, lr)
         best_model = None
         best_score = -1
