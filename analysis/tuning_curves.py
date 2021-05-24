@@ -142,7 +142,7 @@ def calculate_activations(net, batches, im, conv_layers = ["conv1_out", "conv2_o
 
 
 def plot_curves(attended_activations, not_attended_activations, degrange):
-    sns.set_context("poster")
+    sns.set_context("poster", font_scale=2.3)
     for layer in attended_activations.keys(): 
         act = np.stack(attended_activations[layer], 3)
         nonact = np.stack(not_attended_activations[layer], 3)

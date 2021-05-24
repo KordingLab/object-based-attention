@@ -84,7 +84,7 @@ def plot_train_val_curves(df, save = False):
 
 def plot_boxplots(df, save = False): 
     plt.figure(figsize = (10, 5))
-    sns.set_context("poster", font_scale=2.3)
+    sns.set_context("poster")
     sns.barplot(data = df, x = "penalty", y = "train_acc", capsize=.2)
     plt.xlabel("Gating Loss Penalty")
     plt.ylabel("Training Accuracy")
