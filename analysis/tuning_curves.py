@@ -6,6 +6,7 @@ import os
 import sys
 import inspect
 from scipy import stats
+import seaborn as sns
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -141,6 +142,7 @@ def calculate_activations(net, batches, im, conv_layers = ["conv1_out", "conv2_o
 
 
 def plot_curves(attended_activations, not_attended_activations, degrange):
+    sns.set_context("poster")
     for layer in attended_activations.keys(): 
         act = np.stack(attended_activations[layer], 3)
         nonact = np.stack(not_attended_activations[layer], 3)
