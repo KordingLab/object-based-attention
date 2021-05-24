@@ -330,6 +330,7 @@ class Runner():
             masks = []
             hiddens = []
             ior = []
+            selects_x = []
             
             #set the choice mask to all false
             findselectmask = torch.zeros((x.shape[0], self.n)).type(torch.bool)
@@ -370,13 +371,19 @@ class Runner():
                 #selected out is the label corresponding with the maximum output
                 selected_out = merge_y[np.arange(len(merge_y)), select]
                 
+                #concatenate x1 and x2, and then index by selection
+                merge_x = torch.stack(data, 1)
+                #selected x will be used for reconstruction error
+                selected_x = merge_x[np.arange(len(merge_x)), select].reshape(x.shape)
+                selects_x.append(selected_x.detach().cpu().numpy())
+
                 #set the gating mask
                 out_mask = new_out_mask
 
                 masks.append(masked.detach().cpu().numpy())
                 ior.append(out_mask["conv1_in"].detach().cpu().numpy())
             
-            return masks, hiddens, ior
+            return masks, hiddens, ior, selects_x
             
     def toshow(self, x): 
         return x[0]

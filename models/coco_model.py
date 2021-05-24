@@ -14,8 +14,152 @@ import pandas as pd
 from collections import defaultdict
 
 
-
 class Net(nn.Module):
+    def __init__(self, in_size = (100, 100), out_size=12, hidden_size = 100, strength = 1):
+        super(Net, self).__init__()
+        print("COCO Object-Based Attention Model v3")
+        self.out_size = out_size
+        self.in_size = in_size
+        self.hidden_size = hidden_size
+        self.strength = strength
+        
+        channels = [3, 30, 60, 100, 20]
+        self.channels = channels
+        
+        self.conv1 = nn.Conv2d(channels[0], channels[1], 4, 1)
+        self.maxpool1 = nn.MaxPool2d(2)
+        
+        self.conv2 = nn.Conv2d(channels[1], channels[2], 4, 1)
+        self.maxpool2 = nn.MaxPool2d(2)
+        
+        self.conv3 = nn.Conv2d(channels[2], channels[3], 4, 1)
+        self.maxpool3 = nn.MaxPool2d(2)
+        
+        self.conv4 = nn.Conv2d(channels[3], channels[4], 4, 1)
+        self.maxpool4 = nn.MaxPool2d(2)
+        
+        self.h1_1 = self.cout(in_size[0], 4, 1)
+        self.h1_2 = self.cout(self.h1_1, 2, 2)
+        self.h2_1 = self.cout(self.h1_2, 4, 1)
+        self.h2_2 = self.cout(self.h2_1, 2, 2)
+        self.h3_1 = self.cout(self.h2_2, 4, 1)
+        self.h3_2 = self.cout(self.h3_1, 2, 2)
+        self.h4_1 = self.cout(self.h3_2, 4, 1)
+        self.h4_2 = self.cout(self.h4_1, 2, 2)
+        
+        self.w1_1 = self.cout(in_size[1], 4, 1)
+        self.w1_2 = self.cout(self.w1_1, 2, 2)
+        self.w2_1 = self.cout(self.w1_2, 4, 1)
+        self.w2_2 = self.cout(self.w2_1, 2, 2)
+        self.w3_1 = self.cout(self.w2_2, 4, 1)
+        self.w3_2 = self.cout(self.w3_1, 2, 2)
+        self.w4_1 = self.cout(self.w3_2, 4, 1)
+        self.w4_2 = self.cout(self.h4_1, 2, 2)
+        
+        
+        self.upsample4_t = nn.Upsample(size = (self.h4_1, self.w4_1), mode = 'bicubic', align_corners=False)
+        self.conv4_t = nn.ConvTranspose2d(channels[4] * 2, channels[3], 4, stride = 1)
+        self.upsample3_t = nn.Upsample(size = (self.h3_1, self.w3_1), mode = 'bicubic', align_corners=False)
+        self.conv3_t = nn.ConvTranspose2d(channels[3] * 2, channels[2], 4, stride = 1)
+        self.upsample2_t = nn.Upsample(size = (self.h2_1, self.w2_1), mode = 'bicubic', align_corners=False)
+        self.conv2_t = nn.ConvTranspose2d(channels[2] * 2, channels[1], 4, stride = 1)
+        self.upsample1_t = nn.Upsample(size = (self.h1_1, self.w1_1), mode = 'bicubic', align_corners=False)
+        self.conv1_t = nn.ConvTranspose2d(channels[1] * 2, 1, 4,  stride = 1)
+        
+        
+        self.coutsize = self.h4_2 * self.w4_2 * channels[4]
+        
+        self.linear_out = nn.Linear(self.coutsize, out_size)
+        self.linear_out_t = nn.Linear(out_size, self.coutsize)
+        
+        self.dropout = nn.Dropout(0.7)
+        self.latent = defaultdict(lambda: None)
+        self.hidden = defaultdict(lambda: None)
+        self.leakyrelu = nn.LeakyReLU(0.05)
+        
+    def cout(self, x, k, stride = 1, padding = 0): 
+        return ((x - k + 2*padding) // stride + 1)
+
+    def forward(self, x, hidden = None, out_mask = None):
+        x = x * (1 - self.strength * self.hidden["conv1_in"])
+        self.latent["in"] = x
+        
+        x = torch.relu(self.conv1(x))
+        self.latent["conv1_out"] = x
+        x = self.maxpool1(x)
+        self.latent["maxpool1_out"] = x
+        
+        x = x * (1 - self.strength * self.hidden["conv2_in"])
+        x = torch.relu(self.conv2(x))
+        self.latent["conv2_out"] = x
+        x = self.maxpool2(x)
+        self.latent["maxpool2_out"] = x
+        
+        x = x * (1 - self.strength * self.hidden["conv3_in"])
+        x = torch.relu(self.conv3(x))
+        self.latent["conv3_out"] = x
+        x = self.maxpool3(x)
+        self.latent["maxpool3_out"] = x
+        
+        x = x * (1 - self.strength * self.hidden["conv4_in"])
+        x = torch.relu(self.conv4(x))
+        self.latent["conv4_out"] = x
+        x = self.maxpool4(x)
+        self.latent["maxpool4_out"] = x
+        
+        x = x.view(-1, self.coutsize)
+        out = self.linear_out(x)
+        
+        self.hidden["linear_in"] = torch.tanh(self.linear_out_t(out).reshape(self.latent["maxpool4_out"].shape))
+        
+        self.hidden["conv4_in"] = torch.tanh(self.conv4_t(torch.cat([self.upsample4_t(self.hidden["linear_in"]), 
+                                                                     self.upsample4_t(self.latent["maxpool4_out"])], 1), 
+                                               output_size = self.latent["maxpool3_out"].shape))
+        
+        self.hidden["conv3_in"] = torch.tanh(self.conv3_t(torch.cat([self.upsample3_t(self.hidden["conv4_in"]), 
+                                                                     self.upsample3_t(self.latent["maxpool3_out"])], 1), 
+                                               output_size = self.latent["maxpool2_out"].shape))
+        
+        self.hidden["conv2_in"] = torch.tanh(self.conv2_t(torch.cat([self.upsample2_t(self.hidden["conv3_in"]), 
+                                                                     self.upsample2_t(self.latent["maxpool2_out"])], 1), 
+                                               output_size = self.latent["maxpool1_out"].shape))
+        
+        conv1_in_hidden = torch.tanh(self.conv1_t(torch.cat([self.upsample1_t(self.hidden["conv2_in"]), 
+                                                                     self.upsample1_t(self.latent["maxpool1_out"])], 1), 
+                                               output_size = self.latent["in"].shape))
+        
+        self.hidden["conv1_in"] = torch.cat([conv1_in_hidden] * self.channels[0], 1)
+        
+        if out_mask is not None: 
+
+            #zero out conv1-in by mask
+            newconv1in = (1 - out_mask["conv1_in"]) * self.hidden["conv1_in"]
+            #fill the masked part with 1s for full strength
+            self.hidden["conv1_in"] = newconv1in + 1 * out_mask["conv1_in"]
+            
+            #zero out conv2-in by mask
+            newconv2in = (1 - out_mask["conv2_in"]) * self.hidden["conv2_in"]
+            self.hidden["conv2_in"] = newconv2in + 1 * out_mask["conv2_in"]
+            
+            #zero out conv2-in by mask
+            newconv3in = (1 - out_mask["conv3_in"]) * self.hidden["conv3_in"]
+            self.hidden["conv3_in"] = newconv3in + 1 * out_mask["conv3_in"]
+            
+            #zero out conv2-in by mask
+            newconv4in = (1 - out_mask["conv4_in"]) * self.hidden["conv4_in"]
+            self.hidden["conv4_in"] = newconv4in + 1 * out_mask["conv4_in"]
+            
+        return out
+    
+    def initHidden(self, device, batch_size=64): 
+        self.latent = {}
+        self.hidden["conv1_in"] = torch.zeros(batch_size, self.channels[0], self.in_size[0], self.in_size[1]).to(device)
+        self.hidden["conv2_in"] = torch.zeros(batch_size, self.channels[1], self.h1_2, self.w1_2).to(device)
+        self.hidden["conv3_in"] = torch.zeros(batch_size, self.channels[2], self.h2_2, self.w2_2).to(device)
+        self.hidden["conv4_in"] = torch.zeros(batch_size, self.channels[3], self.h3_2, self.w3_2).to(device)
+
+
+class Net_dep(nn.Module):
     def __init__(self, in_size = (100, 100), out_size=12, hidden_size = 100, strength = 1):
         super(Net, self).__init__()
         print("COCO Object-Based Attention Model v3")
@@ -422,6 +566,7 @@ class Runner():
             masks = []
             hiddens = []
             ior = []
+            selects_x = []
 
             self.net.initHidden(self.device, x.shape[0])
             out_mask = {}
@@ -469,6 +614,12 @@ class Runner():
                 merge_y = torch.cat([y.reshape(-1, 1) for y in labels], 1)
                 #selected out is the label corresponding with the maximum output
                 selected_out = merge_y[np.arange(len(merge_y)), select]
+                
+                #concatenate x1 and x2, and then index by selection
+                merge_x = torch.stack(data, 1)
+                #selected x will be used for reconstruction error
+                selected_x = merge_x[np.arange(len(merge_x)), select].reshape(x.shape)
+                selects_x.append(selected_x.detach().cpu().numpy())
 
                 #set the new gating mask
                 out_mask = new_out_mask
@@ -476,7 +627,7 @@ class Runner():
                 masks.append(masked.detach().cpu().numpy())
                 ior.append(out_mask["conv1_in"].detach().cpu().numpy())
 
-            return masks, hiddens, ior
+            return masks, hiddens, ior, selects_x
     
     def toshow(self, x): 
         return np.moveaxis(x, [0, 1, 2],[2, 0, 1])
