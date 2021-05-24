@@ -155,7 +155,6 @@ def plot_curves(attended_activations, not_attended_activations, degrange):
             c = 3
 
         for i in range(act.shape[0]): 
-            plt.figure(figsize = (3, 3))
             plt.plot(degrange, act[i][r][c], color = (14/255, 77/255, 179/255, 1))
             plt.plot(degrange, nonact[i][r][c], color = (212/255, 78/255, 78/255, 1))
             plt.xlabel("Degrees")
