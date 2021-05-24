@@ -142,7 +142,7 @@ def calculate_activations(net, batches, im, conv_layers = ["conv1_out", "conv2_o
 
 
 def plot_curves(attended_activations, not_attended_activations, degrange):
-    sns.set_context("poster", font_scale=2.3)
+    sns.set_context("poster", font_scale=2.0)
     for layer in attended_activations.keys(): 
         act = np.stack(attended_activations[layer], 3)
         nonact = np.stack(not_attended_activations[layer], 3)
@@ -155,6 +155,7 @@ def plot_curves(attended_activations, not_attended_activations, degrange):
             c = 3
 
         for i in range(act.shape[0]): 
+            plt.figure()
             plt.plot(degrange, act[i][r][c], color = (14/255, 77/255, 179/255, 1))
             plt.plot(degrange, nonact[i][r][c], color = (212/255, 78/255, 78/255, 1))
             plt.xlabel("Degrees")
