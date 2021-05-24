@@ -18,7 +18,7 @@ from collections import defaultdict
 class Net(nn.Module):
     def __init__(self, in_size = (100, 100), out_size=12, hidden_size = 100, strength = 1):
         super(Net, self).__init__()
-        print("COCO Object-Based Attention Model v2")
+        print("COCO Object-Based Attention Model v3")
         self.out_size = out_size
         self.in_size = in_size
         self.hidden_size = hidden_size
@@ -29,15 +29,19 @@ class Net(nn.Module):
         
         self.conv1 = nn.Conv2d(channels[0], channels[1], 4, 1)
         self.maxpool1 = nn.MaxPool2d(2)
+        self.bn1 = nn.BatchNorm2d(channels[1])
         
         self.conv2 = nn.Conv2d(channels[1], channels[2], 4, 1)
         self.maxpool2 = nn.MaxPool2d(2)
+        self.bn2 = nn.BatchNorm2d(channels[2])
         
         self.conv3 = nn.Conv2d(channels[2], channels[3], 4, 1)
         self.maxpool3 = nn.MaxPool2d(2)
+        self.bn3 = nn.BatchNorm2d(channels[3])
         
         self.conv4 = nn.Conv2d(channels[3], channels[4], 4, 1)
         self.maxpool4 = nn.MaxPool2d(2)
+        self.bn4 = nn.BatchNorm2d(channels[4])
         
         self.h1_1 = self.cout(in_size[0], 4, 1)
         self.h1_2 = self.cout(self.h1_1, 2, 2)
@@ -89,24 +93,28 @@ class Net(nn.Module):
         self.latent["conv1_out"] = x
         x = self.maxpool1(x)
         self.latent["maxpool1_out"] = x
+        x = self.bn1(x)
         
         x = x * (1 - self.strength * self.hidden["conv2_in"])
         x = torch.relu(self.conv2(x))
         self.latent["conv2_out"] = x
         x = self.maxpool2(x)
         self.latent["maxpool2_out"] = x
+        x = self.bn2(x)
         
         x = x * (1 - self.strength * self.hidden["conv3_in"])
         x = torch.relu(self.conv3(x))
         self.latent["conv3_out"] = x
         x = self.maxpool3(x)
         self.latent["maxpool3_out"] = x
+        x = self.bn3(x)
         
         x = x * (1 - self.strength * self.hidden["conv4_in"])
         x = torch.relu(self.conv4(x))
         self.latent["conv4_out"] = x
         x = self.maxpool4(x)
         self.latent["maxpool4_out"] = x
+        x = self.bn4(x)
         
         x = x.view(-1, self.coutsize)
         out = self.linear_out(x)
