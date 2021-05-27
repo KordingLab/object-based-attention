@@ -5,8 +5,6 @@ import argparse
 import os
 import sys
 import inspect
-import torch
-from torch.utils.data import Dataset, DataLoader, random_split
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -21,6 +19,8 @@ from models.coco_model import Net as COCONet
 from models.coco_model import Runner as COCORunner
 from scipy.stats import ttest_rel, ttest_ind
 import seaborn as sns
+import torch
+from torch.utils.data import Dataset, DataLoader, random_split
 
 device =  torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 

@@ -1,8 +1,9 @@
+from helper import *
 import numpy as np 
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from helper import *
+
 
 def get_final(x): 
     '''
@@ -114,14 +115,15 @@ def load_and_plot_all(metric_files, save = False):
     print("Plotting Performance Boxplots...")
     plot_boxplots(df, save = save)
 
-def inhibition_plot(modelpath, modeltype='mnist', n=2, strength=0.2, cocoroot='', annpath='', metadatapath=''):
+def inhibition_plot(modelpath, modeltype='mnist', n=2, strength=0.2, cocoroot='', annpath='', metadatapath='', save = False):
     net, runner, test_loader = load_model_and_data(modelpath, n = n, strength = strength, modeltype = modeltype,\
                                                cocoroot = cocoroot, annpath = annpath, metadatapath = metadatapath)
     
     loader = DataLoader(test_loader.dataset, batch_size = 1, shuffle = True, num_workers=4)
     inhibiteds = []
     not_inhibiteds = []
-
+    
+    print("Processing. Please Wait...")
     for i, (x, data, labels) in enumerate(loader):
         masks, hiddens, ior, selects_x = runner.visualize(x, data, labels)
         x = x.detach().cpu().numpy()
@@ -144,7 +146,7 @@ def inhibition_plot(modelpath, modeltype='mnist', n=2, strength=0.2, cocoroot=''
         not_inhibiteds.append(not_inhibited / n)
         
         if i % int(len(loader) / 30) == 0: 
-            print(i)
+            print(int(i*100/len(loader)), "%")
 
     values = inhibiteds + not_inhibiteds
     labels = ["Not Attended"]*len(inhibiteds) + ["Attended"]*len(not_inhibiteds)
