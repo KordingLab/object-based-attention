@@ -7,9 +7,8 @@ runs/*
 images/*
 .ipynb_checkpoints/*
 __pycache__/*
-dual_loss_log/*
-images_alt/*
-runs_old/*
-adversarial_images/*
 *.csv
 *.DS_Store
+*/__pycache__/*
+*.pyc
+*/.ipynb_checkpoints/*
