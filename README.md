@@ -68,8 +68,18 @@ python test_coco.py [flags]
 * **--modelpath**: path to the model to evaluate, a .pt file. Default `saved/models/coco_model.pt`
 
 ## Pre-trained Modules
-* The saved model trained on handwritten digits can be found at `saved/models/mnist_model.pt`
-* The saved model trained on natural images can be found at `saved/models/coco_model.pt`
+* The saved model trained on handwritten digits can be found at `saved/models/paper_mnist_model.pt`. To load: 
+```
+from models.mnist_model import *
+net = Net(strength = 0.2)
+net.load_state_dict(torch.load(`saved/models/paper_mnist_model.pt'))
+```
+* The saved model trained on natural images can be found at `saved/models/paper_coco_model.pt`. To load: 
+```
+from models.coco_model import *
+net = Net(strength = 0.2)
+net.load_state_dict(torch.load(`saved/models/paper_coco_model.pt'))
+```
 
 ## Summary
 ```
