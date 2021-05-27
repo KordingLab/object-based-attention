@@ -28,6 +28,10 @@ def files_to_df(metric_files):
     df["convert_train"] = df["smooth_acc"].apply(lambda x: convert(x))
     df["convert_train_steps"] = df["step"].apply(lambda x: convert(x))
 
+    if "val_f1" in df.columns: 
+        df["train_f1"] = df["smooth_f1"].apply(lambda x: get_final(x))
+        df["final_f1"] = df["val_f1"].apply(lambda x: get_final(x))
+        
     df["convert_val"] = df["val_acc"].apply(lambda x: convert(x))
     df["convert_val_steps"] = df["val_step"].apply(lambda x: convert(x))
     
