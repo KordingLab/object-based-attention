@@ -25,7 +25,7 @@ python train_mnist.py [flags]
 * **--noise**: float representing the background noise. Must be between 0.0 and 1.0, inclusive. Default 0.3
 * **--name**: string representing the name of the model. Used for saving models and corresponding plots. Default `mnist_model`
 * **--epochs**: the number of epochs to run the model. Default 30
-* **--randomseed**: set the manual seed. Default 2021
+* **--randomseed**: set the manual seed. Default 100
 
 
 ### train_coco.py
@@ -39,8 +39,8 @@ python train_coco.py [flags]
 * **--n**: number of objects. Default 2
 * **--strength**: float representing the strength of attention. Must be between 0.0 and 1.0, inclusive. Default 0.9
 * **--name**: string representing the name of the model. Used for saving models and corresponding plots. Default `coco_model`
-* **--epochs**: the number of epochs to run the model. Default 60
-* **--randomseed**: set the manual seed. Default 2021
+* **--epochs**: the number of epochs to run the model. Default 100
+* **--randomseed**: set the manual seed. Default 100
 
 ## Evaluation Code
 The code to test the MNIST and COCO models are in `test_mnist.py` and `test_coco.py` respectively. Below are the parameters to run each.
@@ -64,7 +64,7 @@ python test_coco.py [flags]
 * **--metadata**: REQUIRED path to COCO metadata file. If this file does not exist, the script will automatically create it in the specified location. Default `data/metadata/cocometadata_test.p`
 * **--device**: cuda device, if one exists. Default 3
 * **--n**: number of objects. Default 2
-* **--strength**: float representing the strength of attention. Must be between 0.0 and 1.0, inclusive. Default 0.9
+* **--strength**: float representing the strength of attention. Must be between 0.0 and 1.0, inclusive. Default 0.3
 * **--modelpath**: path to the model to evaluate, a .pt file. Default `saved/models/coco_model.pt`
 
 ## Pre-trained Modules
