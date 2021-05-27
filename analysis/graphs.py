@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from helper import *
 
 def get_final(x): 
     '''
@@ -113,6 +114,62 @@ def load_and_plot_all(metric_files, save = False):
     print("Plotting Performance Boxplots...")
     plot_boxplots(df, save = save)
 
+def inhibition_plot(modelpath, modeltype='mnist', n=2, strength=0.2, cocoroot='', annpath='', metadatapath=''):
+    net, runner, test_loader = load_model_and_data(modelpath, n = n, strength = strength, modeltype = modeltype,\
+                                               cocoroot = cocoroot, annpath = annpath, metadatapath = metadatapath)
     
+    loader = DataLoader(test_loader.dataset, batch_size = 1, shuffle = True, num_workers=4)
+    inhibiteds = []
+    not_inhibiteds = []
+
+    for i, (x, data, labels) in enumerate(loader):
+        masks, hiddens, ior, selects_x = runner.visualize(x, data, labels)
+        x = x.detach().cpu().numpy()
+        
+        inhibited = 0
+        not_inhibited = 0
+        
+        for k in range(n):
+            mask = masks[k]
+            hidden = hiddens[k]
+            selectx = selects_x[k]
+            
+            targethidden = ((x - selectx + 0.000001) / (x + 0.000001)) / strength
+            targethidden = (targethidden > 0.5)
+            
+            inhibited += np.mean(hidden[targethidden])
+            not_inhibited += np.mean(hidden[np.logical_not(targethidden)])
+        
+        inhibiteds.append(inhibited / n)
+        not_inhibiteds.append(not_inhibited / n)
+        
+        if i % int(len(loader) / 30) == 0: 
+            print(i)
+
+    values = inhibiteds + not_inhibiteds
+    labels = ["Not Attended"]*len(inhibiteds) + ["Attended"]*len(not_inhibiteds)
+    df = pd.DataFrame({"inhibition": values, "condition": labels})
+
+    colors = ["#d44e4e", "#0e4db3"]
+    sns.set_palette(sns.color_palette(colors))
+
+    plt.figure(figsize=(10, 5))
+    sns.set_style("white")
+    sns.set_context("poster")
+    sns.histplot(data = df, x = "inhibition", hue="condition")
+    plt.ylabel("Frequency")
+    plt.xlabel("Attention Gating (%)")
+    plt.legend(["Attended", "Not Attended"], bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
+            ncol=2, mode="expand", borderaxespad=0.)
+            
+    if save: 
+        plt.savefig("graphs/inhibition.svg")
+    
+    print("Mean Inhibition for Attended vs Not Attended")
+    print(df.groupby("condition")[["inhibition"]].mean())
+    print("SD Inhibition for Attended vs Not Attended")
+    print(df.groupby("condition")[["inhibition"]].std())
+    stat, p = ttest_rel(inhibiteds, not_inhibiteds)
+    print("\tT Statistic %s\tP Value: %s"%(stat, p))
 
 

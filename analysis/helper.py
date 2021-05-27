@@ -19,6 +19,8 @@ from models.mnist_model import Runner as MNISTRunner
 from data.coco_loader import get_data as coco_get_data
 from models.coco_model import Net as COCONet
 from models.coco_model import Runner as COCORunner
+from scipy.stats import ttest_rel, ttest_ind
+import seaborn as sns
 
 device =  torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 
@@ -55,3 +57,8 @@ def toshow(x):
         plt.imshow(x)
         plt.axis("off")
         plt.show()
+    
+
+
+
+    
