@@ -1,9 +1,11 @@
 # Object Based Attention Through Internal Gating
-
+Anonymous Authors
 
 ## Abstract
-Object-based attention is a key component of visual perception, relevant for perception, learning, and memory. Despite a rich set of experimental findings and theories, there is a lack of models of object based attention that work for non-trivial problems. Here we propose a model for visual object based attention which is built on recurrent dynamics and trained using gradient descent. The model is a recurrent convolutional U-Net architecture which simultaneously selectively attends to relevant input regions and features while preserving classification accuracy. Our model replicates a range of findings from neuroscience, including attention invariant tuning, sequential allocation,  and attention dependence of activities.
+Object-based attention is a key component of the visual system, relevant for perception, learning, and memory. Neurons tuned to features of attended objects tend to be more active than those associated with non-attended objects. There is a rich set of models of this phenomenon in computational neuroscience. However, there is currently a divide between models that successfully match physiological data but can only deal with extremely simple problems and models of attention used in computer vision. For example, attention in the brain is known to depend on top-down processing, whereas self-attention in deep learning does not. Here, we propose an artificial neural network model of object-based attention that captures the way in which attention is both top-down and recurrent. Our attention model works well both on simple test stimuli, such as those using images of handwritten digits, and on more complex stimuli, such as natural images drawn from the COCO dataset. We find that our model replicates a range of findings from neuroscience, including attention-invariant tuning, inhibition of return, and attention-mediated scaling of activity. Understanding object based attention is both computationally interesting and a key problem for computational neuroscience. 
 
+
+# Code
 ## Dependencies
 Dependencies can be found in `requirements.txt`
 
@@ -78,11 +80,11 @@ object-based-attention
 └───analysis
 │   │   tuning_curves.py
 │   │   graphs.py
-│   │   visualizations.py
+│   │   helper.py
+│   │   Demo Analysis.ipynb
 │   │
 │   └───tuning_curves/      (figures)
 │   └───graphs/             (figures)
-│   └───visualizations/     (figures)
 │   
 └───data
 │   │   coco_loader.py
@@ -90,12 +92,17 @@ object-based-attention
 │   │
 │   └───metadata/           (coco metadata)
 │   
+└───figures/                (figures from paper)
+│   
 └───models
 │   │   coco_model.py
 │   │   mnist_model.py
 │   
 └───saved
-    │   metrics/            (.csv files)
-    │   models/             (.pt files)
-    |   plots/              (figures)
+    └───metrics/            (.csv files)
+    └───models              (.pt files)
+    │   │   paper_mnist_model.pt
+    │   │   paper_coco_model.pt    
+    │   
+    └───plots/              (figures)
 ```
