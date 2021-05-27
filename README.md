@@ -77,7 +77,7 @@ net.load_state_dict(torch.load(`saved/models/paper_mnist_model.pt'))
 * The saved model trained on natural images can be found at `saved/models/paper_coco_model.pt`. To load: 
 ```
 from models.coco_model import *
-net = Net(strength = 0.2)
+net = Net(strength = 0.3)
 net.load_state_dict(torch.load(`saved/models/paper_coco_model.pt'))
 ```
 
