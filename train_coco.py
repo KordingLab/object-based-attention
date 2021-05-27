@@ -13,7 +13,7 @@ parser.add_argument('--name', type = str, default='coco_attention_model3')
 parser.add_argument('--epochs', type = int, default=100)
 parser.add_argument('--randomseed', type = int, default=100)
 parser.add_argument('--lr', type = float, default=0.0001)
-parser.add_argument('--penalty', type = float, default=10000)
+parser.add_argument('--penalty', type = float, default=5000)
 
 args = parser.parse_args()
 run_id = args.name

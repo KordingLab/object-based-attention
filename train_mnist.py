@@ -8,7 +8,7 @@ parser.add_argument('--n', type= int, default = 3)
 parser.add_argument('--strength', type= float, default = 0.2)
 parser.add_argument('--noise', type= float, default = 0.3)
 parser.add_argument('--name', type = str, default='mnist_model')
-parser.add_argument('--randomseed', type = int, default=2021)
+parser.add_argument('--randomseed', type = int, default=100)
 parser.add_argument('--epochs', type = int, default=10)
 
 args = parser.parse_args()
@@ -19,7 +19,7 @@ f = open(log, "w")
 f.write("\n")
 f.close()
 
-# torch.manual_seed(args.randomseed)
+torch.manual_seed(args.randomseed)
 
 def printwrite(x): 
     print(x)
