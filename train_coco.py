@@ -4,8 +4,8 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device', type= int, default = 3)
-parser.add_argument('--trainpath', type= str, default = '../../../data/jordanlei/coco/images/train2017')
-parser.add_argument('--annpath', type= str, default = '../../../data/jordanlei/coco/annotations/instances_train2017.json')
+parser.add_argument('--trainpath', type= str, default = '../../../data/coco/images/train2017')
+parser.add_argument('--annpath', type= str, default = '../../../data/coco/annotations/instances_train2017.json')
 parser.add_argument('--metadatapath', type= str, default = 'data/metadata/cocometadata_train.p')
 parser.add_argument('--strength', type= float, default = 0.3)
 parser.add_argument('--out', type = str, default='attn')
