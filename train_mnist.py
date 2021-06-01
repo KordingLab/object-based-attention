@@ -35,16 +35,16 @@ dflist = []
 printwrite("Runing Attention Model...")
 
 #learning rate is 1e-3
-for lr in [1e-5]:
+for lr in [1e-3]:
 
     #penalty parameter = 1e3
-    for p in [0, 1e2, 1e3, 1e4, 1e5]:
+    for p in [1e3]:
         modelname = "%s_penalty_%s_lr_%s"%(run_id, p, lr)
         best_model = None
         best_score = -1
 
         #run for a single trial
-        for k in range(5): 
+        for k in range(1): 
             printwrite("[MODELNAME %s TRIAL %s]"%(modelname, k))
             net = Net((28, 28 + 14*(args.n -1)), strength = args.strength).to(device)
             optimizer = torch.optim.Adam(net.parameters(), lr = lr)
